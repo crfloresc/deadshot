@@ -1,17 +1,7 @@
 import os
 from contextlib import ExitStack
 
-FILE = '../../Downloads/SS/CF003_Labels.txt'
-DIRNAME = './labels'
-VALID_LABELS = [
-    'AM',
-    'R',
-    'M1',
-    'N1',
-    'VF'
-]
-OFFSET = 0.150 # in ms
-LIMIT = 4.00 # minutes @todo: change
+from src.constants import DIRNAME, LIMIT, OFFSET, VALID_LABELS
 
 def formatLine(line):
     cleanLinebreak = line.split('\n')[0:1]
@@ -39,15 +29,6 @@ def openStack():
         for file in files:
             result += [validate(file)]
     return result
-
-def openFiles():
-    with open(FILE, 'r') as file:
-        for line in file.readlines():
-            lineFormated = formatLine(line)
-            if lineFormated[2] in VALID_LABELS:
-                start = float(lineFormated[0]) + OFFSET
-                end = float(lineFormated[1]) + OFFSET
-                print(start, ' - ', end)
 
 def selectData(buffer):
     result = []

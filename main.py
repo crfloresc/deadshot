@@ -59,20 +59,37 @@ def getAgree_temp(lst):
     lstSorted = array(sorted([item[0:2] for item in lst]))
     middle = lambda x: x[int(np.floor(len(x) / 4)):int(np.ceil(len(x) * 3 / 4))]
     currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
-    #currStartTime, currEndTime, currLabel = None, None, None
-    #lastStartTime, lastEndTime, lastLabel = None, None, None
-    #agree = 0
-    #diff = OFFSET
-    #means = np.mean(lstSorted, axis=1)
-    #result = round(np.mean(middle(means), axis=0), 6)
     result = []
     
     for item in lst:
-        #print(item[1], currMax + OFFSET)
-        #if 0 - item[0] >= 0 and 0 - item[0] <= OFFSET and abs(currMax - item[1]) >= 0 and abs(currMax - item[1]) <= OFFSET:
         if item[1] <= currMax + OFFSET:
             result.append(item)
     return result, [currMin, currMax]
+
+'''
+Label order:
+ex. [0.0, 1.285021, 'R', 'CF', 0, 0]
+    [start, end, labelName, owner, ownerIndex, itemIndex]
+'''
+def splitByLabel(lst):
+    lstSorted = sorted(lst, key=lambda item : item[2])
+    currLabel = None
+    result = []
+    temp = []
+    
+    for item in lstSorted:
+        if not currLabel:
+            currLabel = item[2]
+        if currLabel == item[2]:
+            temp.append(item)
+        else:
+            currLabel = item[2]
+            result.append(temp)
+            temp = []
+            temp.append(item)
+    else:
+        result.append(temp)
+    return sorted(result, key=len, reverse=True)
 
 def test(files):
     active, firstOperation = True, True
@@ -83,6 +100,8 @@ def test(files):
     tempArr, tempData = [], []
     toDelete = []
     currItems = None
+    output = []
+    s = 0
     
     temp = []
     while active:
@@ -92,34 +111,38 @@ def test(files):
         # aqui busca el start y el end de la label
         for i, json in enumerate(files):
             owner, data = json['owner'], json['data']
-            #lst = list(list(zip(*data)))
-            #print(list(zip(*lst))[0])
             if not data:
                 continue
             inRange = [item + [owner, i, j] for j, item in enumerate(data) if currStartTime == item[0] or abs(currStartTime - item[0]) <= OFFSET]
             tempArr.append(data[0][0:2])
             tempData.append({ 'owner': owner, 'data': data[0] })
             temp += inRange
-        #print(list(getAgree_temp(temp)))
-        print(getAgree_temp(temp))
-
+        temp2 = getAgree_temp(temp)
+        
+        ####### Split array and order by label name #######
+        temp2 = [splitByLabel(temp2[0]), temp2[1]]
+        print(temp2)
+        break
+        
         #######  #######
         minAgree = len(files) - 1 # @todo change
-        currItems = array(tempArr)
-        agreeInMax, agreeInMin, minAvg, maxAvg, attempts = 0, 0, 0, 0, 0
-        iMax, jMax = unravel_index(currItems.argmax(), currItems.shape)
-        currMin, currMax = currItems[i][0], np.amax(currItems)
-        print(iMax, jMax, [currMin, currMax])
+        currItems = array([item[0:2] for item in temp2[0]])
+        minAvg, maxAvg, attempts = 0, 0, 0#agreeInMax, agreeInMin,, 0, 0
+        agree = 0
+        #iMax, jMax = unravel_index(currItems.argmax(), currItems.shape)
+        currMin, currMax = temp2[1]#currItems[i][0], np.amax(currItems)
+        #print(iMax, jMax, [currMin, currMax])
         if __debug__:
             print('\nGet item to remove from main data: ')
         for iA, item in enumerate(currItems):
-            if currMin - item[0] >= 0 and currMin - item[0] <= OFFSET:
-                agreeInMin += 1
-            if currMax - item[1] >= 0 and currMax - item[1] <= OFFSET:
-                agreeInMax += 1
-            if currMin - item[0] >= 0 and currMin - item[0] <= OFFSET and currMax - item[1] >= 0 and currMax - item[1] <= OFFSET:
+            #if abs(currMin - item[0]) >= 0 and abs(currMin - item[0]) <= OFFSET:
+            #    agreeInMin += 1
+            #if abs(currMax - item[1]) >= 0 and abs(currMax - item[1]) <= OFFSET:
+            #    agreeInMax += 1
+            if abs(currMin - item[0]) >= 0 and abs(currMin - item[0]) <= OFFSET and abs(currMax - item[1]) >= 0 and abs(currMax - item[1]) <= OFFSET:
                 minAvg += item[0]
                 maxAvg += item[1]
+                agree += 1
                 iX = getFoundIndexesOf(files, item, iA)
                 if iX:
                     if __debug__:
@@ -133,18 +156,20 @@ def test(files):
                 newData = [tempStartTime, tempEndTime, tempLabel]
                 unsettled.append(newData)
         else:
-            if minAgree >= agreeInMin:
-                minAvg = round(minAvg / agreeInMin, 6)
-            if minAgree >= agreeInMax:
-                maxAvg = round(maxAvg / agreeInMax, 6)
-            if agreeInMin < minAgree or agreeInMax < minAgree:
+            if minAgree >= agree:
+                minAvg = round(minAvg / agree, 6)
+                maxAvg = round(maxAvg / agree, 6)
+            if agree < minAgree:
                 minAvg, maxAvg = 0, 0
                 attempts += 1
                 # reinit currMax
                 print('No min agree reached')
-        print(agreeInMin, agreeInMax, [minAvg, maxAvg], attempts)
+        output += [minAvg, maxAvg]
+        print('result', agree, [minAvg, maxAvg], attempts)
         print('unsettled', unsettled)
         print(files)
+        #s += 1
+        #if s == 1:
         break
 
 def test2(files):

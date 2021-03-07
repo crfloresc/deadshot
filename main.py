@@ -1,11 +1,13 @@
-from src.constants import DIRNAME, LIMIT, OFFSET, VALID_LABELS
+import numpy as np
+from numpy import array, append, unravel_index
+
+from src.constants import LIMIT, OFFSET
 from src.fileUtils import openStack
 
 def selectData(buffer):
     result = []
     for json in buffer:
-        owner = json['owner']
-        data = json['data']
+        owner, data = json['owner'], json['data']
         inRange = [x for x in data if x[0] <= LIMIT]
         result.append({
             'owner': owner,
@@ -18,8 +20,7 @@ def interObserverAgreement(data):
     endTimes = []
     labels = []
     for json in data:
-        owner = json['owner']
-        data = json['data']
+        owner, data = json['owner'], json['data']
         startTime = [x[0] for x in data]
         endTime = [x[1] for x in data]
         label = [x[2] for x in data]
@@ -51,6 +52,45 @@ def interObserverAgreement(data):
     print(startTimes)
 
 def test(files):
+    active, firstOperation = True, True
+    currStartTimes, currEndTimes, currLabels = [], [], []
+    currStartTime, currEndTime, currLabel = None, None, None
+    criteriaStartTime, criteriaEndTime, criteriaLabel = 0, 0, 0
+    output = []
+    tempArr = []
+    currItems = None
+
+    while active:
+        if not files:
+            active = False
+        for i, json in enumerate(files):
+            owner, data = json['owner'], json['data']
+            if not data:
+                del(files[i])
+                break
+            tempArr.append(data[0][0:2])
+            del(files[i]['data'][0])
+        
+        minAgree = 4 # @todo change
+        currItems = array(tempArr)
+        agree, avg = 0, 0
+        initialMax = np.amax(currItems)
+        i, j = unravel_index(currItems.argmax(), currItems.shape)
+        print(i, j, initialMax)
+        for item in currItems:
+            if initialMax - item[1] >= 0 and initialMax - item[1] <= OFFSET:
+                agree += 1
+                avg += item[1]
+        else:
+            if minAgree >= agree:
+                avg = round(avg / agree, 6)
+            else:
+                print('No min agree reached')
+        print(agree, avg)
+        print(list(map(max, currItems)))
+        break
+
+def test2(files):
     active, firstOperation = True, True
     currStartTimes, currEndTimes, currLabels = [], [], []
     currStartTime, currEndTime, currLabel = None, None, None
@@ -89,11 +129,12 @@ def test(files):
                 if criteriaPassed:
                     currStartTime = round((currStartTime + currStartTimes[0]) / 2, 8)
                     currEndTime = round((currEndTime + currEndTimes[0]) / 2, 8)
-            print(owner)
-            print(i, currStartTimes)
-            print(i, currEndTimes)
-            print(i, currLabels)
-            print(currStartTime, currEndTime, currLabel)
+            if __debug__:
+                print(owner)
+                print(i, currStartTimes)
+                print(i, currEndTimes)
+                print(i, currLabels)
+                print(currStartTime, currEndTime, currLabel)
             del(files[i]['data'][0])
         firstOperation = True
         output.append([currStartTime, currEndTime, currLabel])
@@ -103,7 +144,8 @@ if __name__ == '__main__':
     output = []
     buffer = openStack()
     data = selectData(buffer)
+    test(data)
     #interObserverAgreement(data)
-    output += test(data)
+    # output += test(data)
     #print(output)
     #paserToAudacity(output)

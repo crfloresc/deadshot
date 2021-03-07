@@ -51,43 +51,100 @@ def interObserverAgreement(data):
         print(currList)
     print(startTimes)
 
+def getFoundIndexesOf(parent, child, iA):
+    result = [[i, j] for i, _ in enumerate(parent) for j, v in enumerate(_['data']) if v[0] == float(child[0]) and v[1] == float(child[1]) and iA == i]
+    return result[0] if len(result) == 1 else None
+
+def getAgree_temp(lst):
+    lstSorted = array(sorted([item[0:2] for item in lst]))
+    middle = lambda x: x[int(np.floor(len(x) / 4)):int(np.ceil(len(x) * 3 / 4))]
+    currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
+    #currStartTime, currEndTime, currLabel = None, None, None
+    #lastStartTime, lastEndTime, lastLabel = None, None, None
+    #agree = 0
+    #diff = OFFSET
+    #means = np.mean(lstSorted, axis=1)
+    #result = round(np.mean(middle(means), axis=0), 6)
+    result = []
+    
+    for item in lst:
+        #print(item[1], currMax + OFFSET)
+        #if 0 - item[0] >= 0 and 0 - item[0] <= OFFSET and abs(currMax - item[1]) >= 0 and abs(currMax - item[1]) <= OFFSET:
+        if item[1] <= currMax + OFFSET:
+            result.append(item)
+    return result, [currMin, currMax]
+
 def test(files):
     active, firstOperation = True, True
     currStartTimes, currEndTimes, currLabels = [], [], []
-    currStartTime, currEndTime, currLabel = None, None, None
+    currStartTime, currEndTime, currLabel = 0, None, None
     criteriaStartTime, criteriaEndTime, criteriaLabel = 0, 0, 0
-    output = []
-    tempArr = []
+    output, unsettled = [], []
+    tempArr, tempData = [], []
+    toDelete = []
     currItems = None
-
+    
+    temp = []
     while active:
         if not files:
             active = False
+        
+        # aqui busca el start y el end de la label
         for i, json in enumerate(files):
             owner, data = json['owner'], json['data']
+            #lst = list(list(zip(*data)))
+            #print(list(zip(*lst))[0])
             if not data:
-                del(files[i])
-                break
+                continue
+            inRange = [item + [owner, i, j] for j, item in enumerate(data) if currStartTime == item[0] or abs(currStartTime - item[0]) <= OFFSET]
             tempArr.append(data[0][0:2])
-            del(files[i]['data'][0])
-        
-        minAgree = 4 # @todo change
+            tempData.append({ 'owner': owner, 'data': data[0] })
+            temp += inRange
+        #print(list(getAgree_temp(temp)))
+        print(getAgree_temp(temp))
+
+        #######  #######
+        minAgree = len(files) - 1 # @todo change
         currItems = array(tempArr)
-        agree, avg = 0, 0
-        initialMax = np.amax(currItems)
-        i, j = unravel_index(currItems.argmax(), currItems.shape)
-        print(i, j, initialMax)
-        for item in currItems:
-            if initialMax - item[1] >= 0 and initialMax - item[1] <= OFFSET:
-                agree += 1
-                avg += item[1]
-        else:
-            if minAgree >= agree:
-                avg = round(avg / agree, 6)
+        agreeInMax, agreeInMin, minAvg, maxAvg, attempts = 0, 0, 0, 0, 0
+        iMax, jMax = unravel_index(currItems.argmax(), currItems.shape)
+        currMin, currMax = currItems[i][0], np.amax(currItems)
+        print(iMax, jMax, [currMin, currMax])
+        if __debug__:
+            print('\nGet item to remove from main data: ')
+        for iA, item in enumerate(currItems):
+            if currMin - item[0] >= 0 and currMin - item[0] <= OFFSET:
+                agreeInMin += 1
+            if currMax - item[1] >= 0 and currMax - item[1] <= OFFSET:
+                agreeInMax += 1
+            if currMin - item[0] >= 0 and currMin - item[0] <= OFFSET and currMax - item[1] >= 0 and currMax - item[1] <= OFFSET:
+                minAvg += item[0]
+                maxAvg += item[1]
+                iX = getFoundIndexesOf(files, item, iA)
+                if iX:
+                    if __debug__:
+                        print('\t', files[iX[0]]['owner'], '-', files[iX[0]]['data'][iX[1]])
+                    del files[iX[0]]['data'][iX[1]]
             else:
+                iX = getFoundIndexesOf(files, item, iA)
+                tempStartTime = files[iX[0]]['data'][iX[1]][0]
+                tempEndTime = files[iX[0]]['data'][iX[1]][1]
+                tempLabel = files[iX[0]]['data'][iX[1]][2] + '-' + files[iX[0]]['owner']
+                newData = [tempStartTime, tempEndTime, tempLabel]
+                unsettled.append(newData)
+        else:
+            if minAgree >= agreeInMin:
+                minAvg = round(minAvg / agreeInMin, 6)
+            if minAgree >= agreeInMax:
+                maxAvg = round(maxAvg / agreeInMax, 6)
+            if agreeInMin < minAgree or agreeInMax < minAgree:
+                minAvg, maxAvg = 0, 0
+                attempts += 1
+                # reinit currMax
                 print('No min agree reached')
-        print(agree, avg)
-        print(list(map(max, currItems)))
+        print(agreeInMin, agreeInMax, [minAvg, maxAvg], attempts)
+        print('unsettled', unsettled)
+        print(files)
         break
 
 def test2(files):

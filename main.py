@@ -1,34 +1,5 @@
-import os
-from contextlib import ExitStack
-
 from src.constants import DIRNAME, LIMIT, OFFSET, VALID_LABELS
-
-def formatLine(line):
-    cleanLinebreak = line.split('\n')[0:1]
-    return cleanLinebreak[0].split('\t')
-
-def validate(file):
-    result = {
-        'owner': file.name.split('/')[-1][0:2],
-        'data': [],
-    }
-    for line in file.readlines():
-        lineFormated = formatLine(line)
-        label = lineFormated[2]
-        if label in VALID_LABELS:
-            start = float(lineFormated[0].replace(',','.'))
-            end = float(lineFormated[1].replace(',','.'))
-            result['data'] += [[start, end, label]]
-    return result
-
-def openStack():
-    result = []
-    filespath = [os.path.abspath(DIRNAME + '/' + x) for x in os.listdir(DIRNAME)]
-    with ExitStack() as stack:
-        files = [stack.enter_context(open(fname)) for fname in filespath]
-        for file in files:
-            result += [validate(file)]
-    return result
+from src.fileUtils import openStack
 
 def selectData(buffer):
     result = []
@@ -134,5 +105,5 @@ if __name__ == '__main__':
     data = selectData(buffer)
     #interObserverAgreement(data)
     output += test(data)
-    print(output)
+    #print(output)
     #paserToAudacity(output)

@@ -51,15 +51,8 @@ def interObserverAgreement(data):
         print(currList)
     print(startTimes)
 
-def getFoundIndexesOf(parent, child, iA):
-    for i, _ in enumerate(parent):
-        #print(_['owner'])
-        for j, v in enumerate(_['data']):
-            #print(v[0] == float(child[0]) and v[1] == float(child[1]) and iA == i, child[0], child[1], iA, i, j)
-            if v[0] == float(child[0]) and v[1] == float(child[1]):# and iA == i:
-                print(v)
+def getFoundIndexesOf(parent, child):
     result = [[i, j] for i, _ in enumerate(parent) for v in _['data'] if v[0] == float(child[0]) and v[1] == float(child[1])]
-    print('FINISH\n')
     return result[0] if len(result) == 1 else None
 
 def getAgree_temp(lst):
@@ -147,7 +140,7 @@ def test(files):
                 else:
                     unsettledOutput.append([item[0], item[1], item[2] + '-' + item[3]])
                 print(item)
-                ix = getFoundIndexesOf(files, item, j)
+                ix = getFoundIndexesOf(files, item)
                 print(ix)
                 #del(files[item[-2]]['data'][item[-1]])
             else:

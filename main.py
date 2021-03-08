@@ -96,12 +96,12 @@ def test(files):
     currStartTimes, currEndTimes, currLabels = [], [], []
     currStartTime, currEndTime, currLabel = 0, None, None
     criteriaStartTime, criteriaEndTime, criteriaLabel = 0, 0, 0
-    output, unsettled = [], []
+    mainOutput, unsettledOutput, noAgreeOutput = [], [], [] # outputs
     tempArr, tempData = [], []
     toDelete = []
     currItems = None
-    output = []
     s = 0
+    unsettled = []
     
     temp = []
     while active:
@@ -120,18 +120,41 @@ def test(files):
         temp2 = getAgree_temp(temp)
         
         ####### Split array and order by label name #######
-        temp2 = [splitByLabel(temp2[0]), temp2[1]]
-        print(temp2)
-        break
+        temp2 = [splitByLabel(temp2[0]), temp2[1]] # Label segment
+        currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
+        minAgree = len(files) - 1
+        
+        for i, labelCluster in enumerate(temp2[0]):
+            currLabel = None
+            agree = 0
+            noEnoughAgree = []
+            for j, item in enumerate(labelCluster):
+                if not currLabel:
+                    currLabel = item[2]
+                if abs(currAvgSt - item[0]) >= 0 and abs(currAvgSt - item[0]) <= OFFSET and abs(currAvgEt - item[1]) >= 0 and abs(currAvgEt - item[1]) <= OFFSET:
+                    agree += 1
+                    noEnoughAgree.append([item[0], item[1], item[2] + '-' + item[3]])
+                    print(i, j, item, agree)
+                else:
+                    unsettledOutput.append([item[0], item[1], item[2] + '-' + item[3]])
+            else:
+                if agree >= minAgree:
+                    mainOutput.append([currAvgSt, currAvgEt, currLabel])
+                else:
+                    noAgreeOutput += noEnoughAgree
+        else:
+            print(mainOutput)
+            print(unsettledOutput)
+            print(noAgreeOutput)
         
         #######  #######
-        minAgree = len(files) - 1 # @todo change
+        minAgree = len(files) - 1
         currItems = array([item[0:2] for item in temp2[0]])
-        minAvg, maxAvg, attempts = 0, 0, 0#agreeInMax, agreeInMin,, 0, 0
-        agree = 0
-        #iMax, jMax = unravel_index(currItems.argmax(), currItems.shape)
-        currMin, currMax = temp2[1]#currItems[i][0], np.amax(currItems)
-        #print(iMax, jMax, [currMin, currMax])
+        minAvg, maxAvg, agree, attempts = 0, 0, 0, 0
+        currMin, currMax = temp2[1]
+        print('\nInitial vals: ')
+        print(minAgree, currItems, minAvg, maxAvg, agree, attempts, currMin, currMax)
+        break
         if __debug__:
             print('\nGet item to remove from main data: ')
         for iA, item in enumerate(currItems):

@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import array, append, unravel_index
 
+from src.audacity import createLabels
 from src.constants import LIMIT, OFFSET
 from src.fileUtils import openStack
 
@@ -56,7 +57,7 @@ def getFoundIndexesOf(parent, child):
     return result[0] if len(result) == 1 else None
 
 def getAgree_temp(lst):
-    lstSorted = array(sorted([item[0:2] for item in lst]))
+    lstSorted = array(sorted([item[0:2] for item in lst], key=lambda v : v[1]))
     middle = lambda x: x[int(np.floor(len(x) / 4)):int(np.ceil(len(x) * 3 / 4))]
     currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
     result = []
@@ -92,18 +93,10 @@ def splitByLabel(lst):
     return sorted(result, key=len, reverse=True)
 
 def test(files):
-    active, firstOperation = True, True
-    currStartTimes, currEndTimes, currLabels = [], [], []
-    currStartTime, currEndTime, currLabel = 0, None, None
-    criteriaStartTime, criteriaEndTime, criteriaLabel = 0, 0, 0
+    active, currStartTime, attempts = True, 0, 0
     mainOutput, unsettledOutput, noAgreeOutput = [], [], [] # outputs
-    tempArr, tempData = [], []
-    toDelete = []
-    currItems = None
-    s = 0
-    unsettled = []
     
-    temp = []
+    temp, temp2 = [], []
     while active:
         if not files:
             active = False
@@ -113,27 +106,30 @@ def test(files):
             owner, data = json['owner'], json['data']
             if not data:
                 continue
-            inRange = [item + [owner, i, j] for j, item in enumerate(data) if currStartTime == item[0] or abs(currStartTime - item[0]) <= OFFSET]
-            tempArr.append(data[0][0:2])
-            tempData.append({ 'owner': owner, 'data': data[0] })
+            inRange = [item + [owner] for j, item in enumerate(data) if currStartTime == item[0] or abs(currStartTime - item[0]) <= OFFSET]
             temp += inRange
-        temp2 = getAgree_temp(temp)
+        else:
+            temp2 = getAgree_temp(temp)
+            temp = []
         
         ####### Split array and order by label name #######
         temp2 = [splitByLabel(temp2[0]), temp2[1]] # Label segment
+        if attempts == 1:
+            print(temp2)
         currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
-        minAgree = len(files) - 1
+        minAgree = len(files) - 2
         
         if __debug__:
             print('\nGet item to remove from main data: ')
         for i, labelCluster in enumerate(temp2[0]):
-            currLabel = None
-            agree = 0
-            noEnoughAgree = []
+            currLabel, noEnoughAgree, agree = None, [], 0
             for j, item in enumerate(labelCluster):
                 if not currLabel:
                     currLabel = item[2]
-                if abs(currAvgSt - item[0]) >= 0 and abs(currAvgSt - item[0]) <= OFFSET and abs(currAvgEt - item[1]) >= 0 and abs(currAvgEt - item[1]) <= OFFSET:
+                if (abs(currStartTime - item[0]) >= 0 and
+                        abs(currStartTime - item[0]) <= OFFSET and
+                        abs(currAvgEt - item[1]) >= 0 and
+                        abs(currAvgEt - item[1]) <= OFFSET):
                     agree += 1
                     noEnoughAgree.append([item[0], item[1], item[2] + '-' + item[3]])
                     if __debug__:
@@ -148,18 +144,24 @@ def test(files):
                     del(files[ix[0]]['data'][ix[1]])
             else:
                 if agree >= minAgree:
-                    mainOutput.append([currAvgSt, currAvgEt, currLabel])
+                    mainOutput.append([currStartTime, currAvgEt, currLabel])
                 else:
                     noAgreeOutput += noEnoughAgree
         else:
+            currStartTime = currAvgEt
             print('main -\t\t', mainOutput)
             print('unsettled -\t', unsettledOutput)
             print('noAgree -\t', noAgreeOutput)
+            print('currStartTime -\t', currStartTime)
             print(files)
+            print()
         
-        #s += 1
-        #if s == 1:
-        break
+        if attempts == 5:
+            active = False
+        attempts += 1
+    else:
+        print('FINISH')
+        #createLabels(mainOutput)
 
 def test2(files):
     active, firstOperation = True, True

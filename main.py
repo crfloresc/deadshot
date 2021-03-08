@@ -52,7 +52,14 @@ def interObserverAgreement(data):
     print(startTimes)
 
 def getFoundIndexesOf(parent, child, iA):
-    result = [[i, j] for i, _ in enumerate(parent) for j, v in enumerate(_['data']) if v[0] == float(child[0]) and v[1] == float(child[1]) and iA == i]
+    for i, _ in enumerate(parent):
+        #print(_['owner'])
+        for j, v in enumerate(_['data']):
+            #print(v[0] == float(child[0]) and v[1] == float(child[1]) and iA == i, child[0], child[1], iA, i, j)
+            if v[0] == float(child[0]) and v[1] == float(child[1]):# and iA == i:
+                print(v)
+    result = [[i, j] for i, _ in enumerate(parent) for v in _['data'] if v[0] == float(child[0]) and v[1] == float(child[1])]
+    print('FINISH\n')
     return result[0] if len(result) == 1 else None
 
 def getAgree_temp(lst):
@@ -134,26 +141,30 @@ def test(files):
                 if abs(currAvgSt - item[0]) >= 0 and abs(currAvgSt - item[0]) <= OFFSET and abs(currAvgEt - item[1]) >= 0 and abs(currAvgEt - item[1]) <= OFFSET:
                     agree += 1
                     noEnoughAgree.append([item[0], item[1], item[2] + '-' + item[3]])
-                    print(i, j, item, agree)
+                    if __debug__:
+                        print(i, j, item, agree)
+                        print(files[item[-2]]['data'][item[-1]])
                 else:
                     unsettledOutput.append([item[0], item[1], item[2] + '-' + item[3]])
+                print(item)
+                ix = getFoundIndexesOf(files, item, j)
+                print(ix)
+                #del(files[item[-2]]['data'][item[-1]])
             else:
                 if agree >= minAgree:
                     mainOutput.append([currAvgSt, currAvgEt, currLabel])
                 else:
                     noAgreeOutput += noEnoughAgree
         else:
-            print(mainOutput)
-            print(unsettledOutput)
-            print(noAgreeOutput)
+            print('main -\t\t', mainOutput)
+            print('unsettled -\t', unsettledOutput)
+            print('noAgree -\t', noAgreeOutput)
+            print(files)
         
         #######  #######
-        minAgree = len(files) - 1
         currItems = array([item[0:2] for item in temp2[0]])
         minAvg, maxAvg, agree, attempts = 0, 0, 0, 0
         currMin, currMax = temp2[1]
-        print('\nInitial vals: ')
-        print(minAgree, currItems, minAvg, maxAvg, agree, attempts, currMin, currMax)
         break
         if __debug__:
             print('\nGet item to remove from main data: ')

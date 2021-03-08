@@ -52,7 +52,7 @@ def interObserverAgreement(data):
     print(startTimes)
 
 def getFoundIndexesOf(parent, child):
-    result = [[i, j] for i, _ in enumerate(parent) for v in _['data'] if v[0] == float(child[0]) and v[1] == float(child[1])]
+    result = [[i, j] for i, _ in enumerate(parent) for j, v in enumerate(_['data']) if v[0] == float(child[0]) and v[1] == float(child[1])]
     return result[0] if len(result) == 1 else None
 
 def getAgree_temp(lst):
@@ -124,6 +124,8 @@ def test(files):
         currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
         minAgree = len(files) - 1
         
+        if __debug__:
+            print('\nGet item to remove from main data: ')
         for i, labelCluster in enumerate(temp2[0]):
             currLabel = None
             agree = 0
@@ -139,10 +141,11 @@ def test(files):
                         print(files[item[-2]]['data'][item[-1]])
                 else:
                     unsettledOutput.append([item[0], item[1], item[2] + '-' + item[3]])
-                print(item)
                 ix = getFoundIndexesOf(files, item)
-                print(ix)
-                #del(files[item[-2]]['data'][item[-1]])
+                if ix:
+                    if __debug__:
+                        print('\t', item[-3], '-', item[0:3])
+                    del(files[ix[0]]['data'][ix[1]])
             else:
                 if agree >= minAgree:
                     mainOutput.append([currAvgSt, currAvgEt, currLabel])
@@ -154,47 +157,6 @@ def test(files):
             print('noAgree -\t', noAgreeOutput)
             print(files)
         
-        #######  #######
-        currItems = array([item[0:2] for item in temp2[0]])
-        minAvg, maxAvg, agree, attempts = 0, 0, 0, 0
-        currMin, currMax = temp2[1]
-        break
-        if __debug__:
-            print('\nGet item to remove from main data: ')
-        for iA, item in enumerate(currItems):
-            #if abs(currMin - item[0]) >= 0 and abs(currMin - item[0]) <= OFFSET:
-            #    agreeInMin += 1
-            #if abs(currMax - item[1]) >= 0 and abs(currMax - item[1]) <= OFFSET:
-            #    agreeInMax += 1
-            if abs(currMin - item[0]) >= 0 and abs(currMin - item[0]) <= OFFSET and abs(currMax - item[1]) >= 0 and abs(currMax - item[1]) <= OFFSET:
-                minAvg += item[0]
-                maxAvg += item[1]
-                agree += 1
-                iX = getFoundIndexesOf(files, item, iA)
-                if iX:
-                    if __debug__:
-                        print('\t', files[iX[0]]['owner'], '-', files[iX[0]]['data'][iX[1]])
-                    del files[iX[0]]['data'][iX[1]]
-            else:
-                iX = getFoundIndexesOf(files, item, iA)
-                tempStartTime = files[iX[0]]['data'][iX[1]][0]
-                tempEndTime = files[iX[0]]['data'][iX[1]][1]
-                tempLabel = files[iX[0]]['data'][iX[1]][2] + '-' + files[iX[0]]['owner']
-                newData = [tempStartTime, tempEndTime, tempLabel]
-                unsettled.append(newData)
-        else:
-            if minAgree >= agree:
-                minAvg = round(minAvg / agree, 6)
-                maxAvg = round(maxAvg / agree, 6)
-            if agree < minAgree:
-                minAvg, maxAvg = 0, 0
-                attempts += 1
-                # reinit currMax
-                print('No min agree reached')
-        output += [minAvg, maxAvg]
-        print('result', agree, [minAvg, maxAvg], attempts)
-        print('unsettled', unsettled)
-        print(files)
         #s += 1
         #if s == 1:
         break

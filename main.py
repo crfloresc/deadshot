@@ -60,7 +60,6 @@ def getAgree_temp(lst):
     lstSorted = array(sorted([item[0:2] for item in lst], key=lambda v : v[1]))
     middle = lambda x: x[int(np.floor(len(x) / 4)):int(np.ceil(len(x) * 3 / 4))]
     diff = round(middle(lstSorted)[-1][-1] - middle(lstSorted)[0][1], 6)
-    print(diff)
     currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
     result = []
     
@@ -125,6 +124,9 @@ def test(files):
         minAgree = round(len(files) / 2)
         
         if __debug__:
+            print('offset -\t', diff)
+            print('currStartTime -\t', currStartTime)
+            print('currAvgEt -\t', currAvgEt)
             print('\nGet item to remove from main data: ')
         for i, labelCluster in enumerate(temp2[0]):
             currLabel, noEnoughAgree, agree = None, [], 0
@@ -132,20 +134,19 @@ def test(files):
                 if not currLabel:
                     currLabel = item[2]
                 if (abs(currStartTime - item[0]) >= 0 and
-                        abs(currStartTime - item[0]) <= OFFSET and
+                        abs(currStartTime - item[0]) <= diff and
                         abs(currAvgEt - item[1]) >= 0 and
-                        abs(currAvgEt - item[1]) <= OFFSET):
+                        abs(currAvgEt - item[1]) <= diff):
                     agree += 1
                     noEnoughAgree.append([item[0], item[1], item[2] + '-' + item[3]])
                     if __debug__:
-                        print(i, j, item, agree)
-                        print(files[item[-2]]['data'][item[-1]])
+                        print('\t', 'approved', i, j, item, agree)
                 else:
                     unsettledOutput.append([item[0], item[1], item[2] + '-' + item[3]])
                 ix = getFoundIndexesOf(files, item)
                 if ix:
                     if __debug__:
-                        print('\t', item[-3], '-', item[0:3])
+                        print('\t', item[-3], '-', item)
                     del(files[ix[0]]['data'][ix[1]])
             else:
                 if agree >= minAgree:
@@ -154,14 +155,16 @@ def test(files):
                     noAgreeOutput += noEnoughAgree
         else:
             currStartTime = currAvgEt
-            #print('main -\t\t', mainOutput)
-            #print('unsettled -\t', unsettledOutput)
-            #print('noAgree -\t', noAgreeOutput)
-            print('currStartTime -\t', currStartTime)
-            print()
+            if __debug__:
+                print('main -\t\t', mainOutput)
+                print('unsettled -\t', unsettledOutput)
+                print('noAgree -\t', noAgreeOutput)
+                print('currStartTime -\t', currStartTime)
+                print()
     else:
-        print('main -\t\t', mainOutput)
-        print(files)
+        if __debug__:
+            print('main -\t\t', mainOutput)
+            print(files)
         if mainOutput:
             createLabels('mainOutput', mainOutput)
         if unsettledOutput:
@@ -220,11 +223,6 @@ def test2(files):
     return output
 
 if __name__ == '__main__':
-    output = []
     buffer = openStack()
     data = selectData(buffer)
     test(data)
-    #interObserverAgreement(data)
-    # output += test(data)
-    #print(output)
-    #paserToAudacity(output)

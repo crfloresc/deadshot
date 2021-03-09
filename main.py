@@ -9,7 +9,7 @@ def selectData(buffer):
     result = []
     for json in buffer:
         owner, data = json['owner'], json['data']
-        inRange = [x for x in data if x[0] <= LIMIT]
+        inRange = [x for x in data if x[0] <= 60]
         result.append({
             'owner': owner,
             'data': inRange
@@ -59,13 +59,15 @@ def getFoundIndexesOf(parent, child):
 def getAgree_temp(lst):
     lstSorted = array(sorted([item[0:2] for item in lst], key=lambda v : v[1]))
     middle = lambda x: x[int(np.floor(len(x) / 4)):int(np.ceil(len(x) * 3 / 4))]
+    diff = round(middle(lstSorted)[-1][-1] - middle(lstSorted)[0][1], 6)
+    print(diff)
     currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
     result = []
     
     for item in lst:
         if item[1] <= currMax + OFFSET:
             result.append(item)
-    return result, [currMin, currMax]
+    return result, [currMin, currMax], diff
 
 '''
 Label order:
@@ -93,7 +95,7 @@ def splitByLabel(lst):
     return sorted(result, key=len, reverse=True)
 
 def test(files):
-    active, currStartTime, attempts = True, 0, 0
+    active, currStartTime, attempts, diff = True, 0, 0, OFFSET
     mainOutput, unsettledOutput, noAgreeOutput = [], [], [] # outputs
     
     temp, temp2 = [], []
@@ -101,23 +103,27 @@ def test(files):
         if not files:
             active = False
         
+        if currStartTime >= 60:
+            active = False
+            continue
         # aqui busca el start y el end de la label
         for i, json in enumerate(files):
             owner, data = json['owner'], json['data']
             if not data:
                 continue
-            inRange = [item + [owner] for j, item in enumerate(data) if currStartTime == item[0] or abs(currStartTime - item[0]) <= OFFSET]
+            inRange = [item + [owner] for j, item in enumerate(data) if currStartTime == item[0] or abs(currStartTime - item[0]) <= diff]
             temp += inRange
         else:
+            if not temp:
+                break
             temp2 = getAgree_temp(temp)
             temp = []
         
         ####### Split array and order by label name #######
+        diff = temp2[2] if temp2[2] > 0 else OFFSET
         temp2 = [splitByLabel(temp2[0]), temp2[1]] # Label segment
-        if attempts == 1:
-            print(temp2)
         currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
-        minAgree = len(files) - 2
+        minAgree = round(len(files) / 2)
         
         if __debug__:
             print('\nGet item to remove from main data: ')
@@ -149,19 +155,24 @@ def test(files):
                     noAgreeOutput += noEnoughAgree
         else:
             currStartTime = currAvgEt
-            print('main -\t\t', mainOutput)
-            print('unsettled -\t', unsettledOutput)
-            print('noAgree -\t', noAgreeOutput)
+            #print('main -\t\t', mainOutput)
+            #print('unsettled -\t', unsettledOutput)
+            #print('noAgree -\t', noAgreeOutput)
             print('currStartTime -\t', currStartTime)
-            print(files)
             print()
         
-        if attempts == 5:
-            active = False
+        #if attempts == 6:
+        #    active = False
         attempts += 1
     else:
-        print('FINISH')
-        #createLabels(mainOutput)
+        print('main -\t\t', mainOutput)
+        print(files)
+        if mainOutput:
+            createLabels('mainOutput', mainOutput)
+        if unsettledOutput:
+            createLabels('unsettledOutput', unsettledOutput)
+        if noAgreeOutput:
+            createLabels('noAgreeOutput', noAgreeOutput)
 
 def test2(files):
     active, firstOperation = True, True

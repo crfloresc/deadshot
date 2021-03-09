@@ -11,6 +11,8 @@ def validate(file):
     }
     for line in file.readlines():
         lineFormated = formatLine(line)
+        if len(lineFormated) != 3:
+            continue
         label = lineFormated[2]
         if label in VALID_LABELS:
             start = float(lineFormated[0].replace(',','.'))

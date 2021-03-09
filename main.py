@@ -100,12 +100,10 @@ def test(files):
     
     temp, temp2 = [], []
     while active:
-        if not files:
-            active = False
-        
-        if currStartTime >= 60:
+        if not files or currStartTime >= 60 or attempts == 5:
             active = False
             continue
+        
         # aqui busca el start y el end de la label
         for i, json in enumerate(files):
             owner, data = json['owner'], json['data']
@@ -115,7 +113,8 @@ def test(files):
             temp += inRange
         else:
             if not temp:
-                break
+                attempts += 1
+                continue
             temp2 = getAgree_temp(temp)
             temp = []
         
@@ -160,10 +159,6 @@ def test(files):
             #print('noAgree -\t', noAgreeOutput)
             print('currStartTime -\t', currStartTime)
             print()
-        
-        #if attempts == 6:
-        #    active = False
-        attempts += 1
     else:
         print('main -\t\t', mainOutput)
         print(files)

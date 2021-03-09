@@ -1,4 +1,5 @@
 import numpy as np
+from math import ceil
 from numpy import array, append, unravel_index
 
 from src.audacity import createLabels
@@ -15,42 +16,6 @@ def selectData(buffer):
             'data': inRange
         })
     return result
-
-def interObserverAgreement(data):
-    startTimes = []
-    endTimes = []
-    labels = []
-    for json in data:
-        owner, data = json['owner'], json['data']
-        startTime = [x[0] for x in data]
-        endTime = [x[1] for x in data]
-        label = [x[2] for x in data]
-        startTimes.append({
-            'owner': owner,
-            'startTimes': startTime
-        })
-        endTimes.append({
-            'owner': owner,
-            'endTimes': endTime
-        })
-        labels.append({
-            'owner': owner,
-            'labels': label
-        })
-    for i, startTime in enumerate(startTimes):
-        currTime = None
-        currList = startTime['startTimes']
-        while True:
-            for dataTime in currList:
-                if currTime == None:
-                    print('NONE')
-                    currTime = dataTime
-                    del(startTimes[i]['startTimes'][0])
-                print(i, currTime, dataTime)
-                #currList.remove(currTime)
-            break
-        print(currList)
-    print(startTimes)
 
 def getFoundIndexesOf(parent, child):
     result = [[i, j] for i, _ in enumerate(parent) for j, v in enumerate(_['data']) if v[0] == float(child[0]) and v[1] == float(child[1])]
@@ -121,7 +86,7 @@ def test(files):
         diff = temp2[2] if temp2[2] > 0 else OFFSET
         temp2 = [splitByLabel(temp2[0]), temp2[1]] # Label segment
         currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
-        minAgree = round(len(files) / 2)
+        minAgree = ceil(len(files) / 2)
         
         if __debug__:
             print('offset -\t', diff)

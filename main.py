@@ -4,18 +4,8 @@ from numpy import array, append, unravel_index
 
 from src.audacity import createLabels
 from src.constants import LIMIT, OFFSET
+from src.jsonUtil import limitJson
 from src.fileUtils import openStack
-
-def selectData(buffer):
-    result = []
-    for json in buffer:
-        owner, data = json['owner'], json['data']
-        inRange = [x for x in data if x[0] <= 60]
-        result.append({
-            'owner': owner,
-            'data': inRange
-        })
-    return result
 
 def getFoundIndexesOf(parent, child):
     result = [[i, j] for i, _ in enumerate(parent) for j, v in enumerate(_['data']) if v[0] == float(child[0]) and v[1] == float(child[1])]
@@ -189,5 +179,5 @@ def test2(files):
 
 if __name__ == '__main__':
     buffer = openStack()
-    data = selectData(buffer)
-    test(data)
+    data = limitJson(buffer, limit=60)
+    test(list(data))

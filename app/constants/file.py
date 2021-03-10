@@ -1,1 +1,1 @@
-DIRNAME = './labels'
+DIRNAME = './sample'

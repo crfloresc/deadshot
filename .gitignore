@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib
 lib64/
 parts/
 sdist/
@@ -130,4 +130,5 @@ dmypy.json
 
 # Custom
 /out
-labels/
+**/labels
+**/sample

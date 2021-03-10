@@ -11,7 +11,7 @@ setuptools.setup(
     install_requires=[],
     entry_points={
             'console_scripts': [
-                'app = app.bin.app:main'
+                'deadshot = app.bin.app:main'
             ],
         },
 )

@@ -9,12 +9,60 @@ def getFoundIndexesOf(parent, child):
     result = [[i, j] for i, _ in enumerate(parent) for j, v in enumerate(_['data']) if v[0] == float(child[0]) and v[1] == float(child[1])]
     return result[0] if len(result) == 1 else None
 
+def proto(lst):
+    while True:
+        testLst = sorted([item for item in lst], key=lambda v : (v[2], -v[1]))
+        last = None
+        avg, a = 0, []
+        for i, item in enumerate(testLst):
+            if item[2] != 'R':
+                continue
+            if i == 3:
+                continue
+            a.append(item[0:2])
+            if not last:
+                last = item[1]
+                #print(last, item)
+                continue
+            '''div = 0
+            if last >= item[1]:
+                div = last / item[1]
+                print(last, item[1], div, item)
+            else:
+                div = item[1] / last
+                print(last, item[1], div, item)
+            if div <= 1 + OFFSET:
+                print(div)'''
+        m = None
+        approved = 0
+        if a:
+            m = np.mean(a, axis=0)
+            print(m)
+        for item in a:
+            #print(item[1], item[1] <= m[1] + 0.150, item[1] >= m[0] + 0.150)
+            offsetStart = abs(item[0] - m[0])
+            offsetEnd = abs(item[1] - m[1])
+            if offsetStart >= 0 and offsetStart <= 0.160 and offsetEnd >= 0 and offsetEnd <= 0.160:
+                print('setted', item)
+                approved += 1
+            else:
+                print('unsetted', item)
+        if approved >= round(len(a) / 2) + 1:
+            break
+
 def getAgree_temp(lst):
     lstSorted = array(sorted([item[0:2] for item in lst], key=lambda v : v[1]))
     middle = lambda x: x[int(np.floor(len(x) / 4)):int(np.ceil(len(x) * 3 / 4))]
     diff = round(middle(lstSorted)[-1][-1] - middle(lstSorted)[0][1], 6)
     currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
     result = []
+    #print([item for item in lst])
+    #print(np.min([item[0:2] for item in lst]), np.max([item[0:2] for item in lst]))
+    #print(np.min([item[0:2] for item in lst]) / np.max([item[0:2] for item in lst]) * 100)
+    ecpiIOA = [round(len(lst) / item[1] * 100, 6) for item in lst]
+    proto(lst)
+    #print([item[1] for item in lst], len(lst))
+    #print(ecpiIOA)
     
     for item in lst:
         if item[1] <= currMax + OFFSET:
@@ -49,6 +97,7 @@ def splitByLabel(lst):
 def test(files):
     active, currStartTime, attempts, diff = True, 0, 0, OFFSET
     mainOutput, unsettledOutput, noAgreeOutput = [], [], [] # outputs
+    env, testPrint = 'development0', 0
     
     temp, temp2 = [], []
     while active:
@@ -76,7 +125,7 @@ def test(files):
         currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
         minAgree = ceil(len(files) / 2)
         
-        if __debug__:
+        if __debug__ and env == 'development' and testPrint == 0:
             print('offset -\t', diff)
             print('currStartTime -\t', currStartTime)
             print('currAvgEt -\t', currAvgEt)
@@ -92,13 +141,13 @@ def test(files):
                         abs(currAvgEt - item[1]) <= diff):
                     agree += 1
                     noEnoughAgree.append([item[0], item[1], item[2] + '-' + item[3]])
-                    if __debug__:
+                    if __debug__ and env == 'development' and testPrint == 0:
                         print('\t', 'approved', i, j, item, agree)
                 else:
                     unsettledOutput.append([item[0], item[1], item[2] + '-' + item[3]])
                 ix = getFoundIndexesOf(files, item)
                 if ix:
-                    if __debug__:
+                    if __debug__ and env == 'development' and testPrint == 0:
                         print('\t', item[-3], '-', item)
                     del(files[ix[0]]['data'][ix[1]])
             else:
@@ -108,14 +157,15 @@ def test(files):
                     noAgreeOutput += noEnoughAgree
         else:
             currStartTime = currAvgEt
-            if __debug__:
+            if __debug__ and env == 'development' and testPrint == 0:
                 print('main -\t\t', mainOutput)
                 print('unsettled -\t', unsettledOutput)
                 print('noAgree -\t', noAgreeOutput)
                 print('currStartTime -\t', currStartTime)
                 print()
+        testPrint += 1
     else:
-        if __debug__:
+        if __debug__ and env == 'development' and testPrint == 0:
             print('main -\t\t', mainOutput)
             print(files)
         if mainOutput:

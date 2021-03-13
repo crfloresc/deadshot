@@ -1,9 +1,8 @@
 from argparse import ArgumentParser
 
-from app.lib import limitJson, openStack, test
+from app.lib import limitJson, openStack, test, mdpo
 
 def duration(buffer):
-    #https://www.youtube.com/watch?v=JUFh-dNGYwo
     import numpy as np
     from prettytable import PrettyTable
     x = PrettyTable()
@@ -31,8 +30,6 @@ def duration(buffer):
             elif label[0] == 'M':
                 countEndTimeInLabelM += endTime
                 countLabelM += 1
-            #if item[1] - item[0] =< 1:
-            #    print(i, j, item, item[1] - item[0])22
         else:
             x.add_row([owner, countLabelR, countLabelAM, countLabelN, countLabelM, countLabelVF])
             labels.append([countLabelR, countLabelAM, countLabelN, countLabelM, countLabelVF])
@@ -60,7 +57,7 @@ def main():
     print(args)
     
     buffer = openStack(path=args.sample)
-    duration(buffer)
+    mdpo(buffer)
     #dataLimited = limitJson(buffer, limit=float(args.audiolen))
     #test(list(dataLimited), limit=float(args.audiolen))
 

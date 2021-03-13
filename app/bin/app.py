@@ -25,10 +25,10 @@ def duration(buffer):
             elif label == 'AM':
                 countEndTimeInLabelAM += endTime
                 countLabelAM += 1
-            elif label == 'N1':
+            elif label[0] == 'N':
                 countEndTimeInLabelN += endTime
                 countLabelN += 1
-            elif label == 'M1':
+            elif label[0] == 'M':
                 countEndTimeInLabelM += endTime
                 countLabelM += 1
             #if item[1] - item[0] =< 1:
@@ -44,24 +44,24 @@ def duration(buffer):
         sums = np.sum(labels, axis=1)
         shorterDur, longerDur = np.min(sums), np.max(sums)
         totalDur = shorterDur / longerDur * 100
-        #print(totalDur)
+        print('Total duration is:', totalDur)
         
         # Mean durarion per occurrence
         shortersDur, longersDur = np.min(labels, axis=0), np.max(labels, axis=0)
         sumDurIoas = np.sum(shortersDur / longersDur)
         mdpo = sumDurIoas / len(labels[0]) * 100
-        print(mdpo)
+        print('Mean durarion per occurrence is:', mdpo)
 
 def main():
     parser = ArgumentParser(description='Arguments being passed to the program')
     parser.add_argument('--audiolen', '-aL', required=False, default=60, help='Audio lenght')
     args = parser.parse_args()
-    print(f'audiolen is {args.audiolen}')
+    #print(f'audiolen is {args.audiolen}')
     
     buffer = openStack()
-    #duration(buffer)
-    dataLimited = limitJson(buffer, limit=float(args.audiolen))
-    test(list(dataLimited))
+    duration(buffer)
+    #dataLimited = limitJson(buffer, limit=float(args.audiolen))
+    #test(list(dataLimited), limit=float(args.audiolen))
 
 if __name__ == '__main__':
     main()

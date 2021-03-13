@@ -46,19 +46,20 @@ def duration(buffer):
         totalDur = shorterDur / longerDur * 100
         print('Total duration is:', totalDur)
         
-        # Mean durarion per occurrence
+        # Mean duration per occurrence
         shortersDur, longersDur = np.min(labels, axis=0), np.max(labels, axis=0)
         sumDurIoas = np.sum(shortersDur / longersDur)
         mdpo = sumDurIoas / len(labels[0]) * 100
-        print('Mean durarion per occurrence is:', mdpo)
+        print('Mean duration per occurrence is:', mdpo)
 
 def main():
-    parser = ArgumentParser(description='Arguments being passed to the program')
+    parser = ArgumentParser(prog='deadshot', description='Arguments being passed to the program')
     parser.add_argument('--audiolen', '-aL', required=False, default=60, help='Audio lenght')
+    parser.add_argument('--sample', '-s', required=True, default='./sample', help='Sample path')
     args = parser.parse_args()
-    #print(f'audiolen is {args.audiolen}')
+    print(args)
     
-    buffer = openStack()
+    buffer = openStack(path=args.sample)
     duration(buffer)
     #dataLimited = limitJson(buffer, limit=float(args.audiolen))
     #test(list(dataLimited), limit=float(args.audiolen))

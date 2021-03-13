@@ -5,15 +5,12 @@ from os.path import abspath
 from app.constants import DIRNAME
 from app.lib.validation import validate
 
-def getListdir():
-    return listdir(DIRNAME)
+def getAbsdir(path, file):
+    return abspath(f'{path}/{file}')
 
-def getAbsdir(file):
-    return abspath(DIRNAME + '/' + file)
-
-def openStack():
+def openStack(path):
     result = []
-    filespath = [getAbsdir(x) for x in getListdir()]
+    filespath = [getAbsdir(path, x) for x in listdir(path)]
     with ExitStack() as stack:
         files = [stack.enter_context(open(fname)) for fname in filespath]
         for file in files:

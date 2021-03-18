@@ -5,6 +5,9 @@ def formatLine(line):
     return cleanLinebreak[0].split('\t')
 
 def validate(file):
+    '''
+    @deprecated
+    '''
     result = {
         'owner': file.name.split('/')[-1][0:2],
         'data': [],
@@ -19,3 +22,18 @@ def validate(file):
             end = float(lineFormated[1].replace(',','.'))
             result['data'] += [[start, end, label]]
     return result
+
+def bufferValidate(buffer, customValidLabels):
+    currOwner, temp = None, []
+    for line in buffer.readlines():
+        lineFormated = formatLine(line)
+        if len(lineFormated) != 3:
+            continue
+        if not currOwner:
+            currOwner = buffer.name.split('/')[-1][0:2]
+        label = lineFormated[2]
+        if label in customValidLabels:
+            start = float(lineFormated[0].replace(',','.'))
+            end = float(lineFormated[1].replace(',','.'))
+            temp.append([start, end, label])
+    return dict({currOwner: temp})

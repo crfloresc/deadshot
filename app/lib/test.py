@@ -83,7 +83,7 @@ def getAgree_temp(lst):
     diff = round(middle(lstSorted)[-1][-1] - middle(lstSorted)[0][1], 6)
     currMin, currMax = (round(x, 6) for x in np.mean(middle(lstSorted), axis=0))
     result = []
-    proto(lst)
+    #proto(lst)
     
     for item in lst:
         if item[1] <= currMax + OFFSET:
@@ -142,6 +142,7 @@ def test(files, limit=60, maxAttempts=5):
         
         ####### Split array and order by label name #######
         diff = temp2[2] if temp2[2] > 0 else OFFSET
+        print(temp2)
         temp2 = [splitByLabel(temp2[0]), temp2[1]] # Label segment
         currAvgSt, currAvgEt = temp2[1][0], temp2[1][1]
         minAgree = ceil(len(files) / 2)

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from app.lib import limitJson, openStack, test, mdpo
+from app.lib import limitJson, openStack, test, mdpo, load, shot
 
 def duration(buffer):
     import numpy as np
@@ -56,10 +56,15 @@ def main():
     args = parser.parse_args()
     print(args)
     
+    '''buffer = load(path=args.sample)
+    temp = dict()
+    for k, v in buffer.items():
+        temp[k] = [event for event in v if event[-1] == 'R']
+    shot(temp, limit=5)'''
     buffer = openStack(path=args.sample)
     mdpo(buffer)
-    #dataLimited = limitJson(buffer, limit=float(args.audiolen))
-    #test(list(dataLimited), limit=float(args.audiolen))
+    dataLimited = limitJson(buffer, limit=float(args.audiolen))
+    test(list(dataLimited), limit=float(args.audiolen))
 
 if __name__ == '__main__':
     main()

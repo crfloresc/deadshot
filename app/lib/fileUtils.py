@@ -15,7 +15,7 @@ def load(path, customValidLabels=VALID_LABELS):
         filesData = [stack.enter_context(open(fname)) for fname in filespath]
         for fileBuffer in filesData:
             result.update(bufferValidate(fileBuffer, customValidLabels))
-    return result
+    return result, len(result)
 
 def openStack(path):
     '''

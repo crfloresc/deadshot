@@ -15,7 +15,7 @@ class Measures(object):
         self._setHeader()
         self._process()
     def _checkIsSameHeader(self):
-        cluster = [sorted(json['data'], key=lambda v : v[2]) for json in self.files]
+        cluster = [sorted(v, key=lambda v : v[2]) for k, v in self.files.items()]
         columnLabelCluster = [np.array(labelTrack)[:,2] for labelTrack in cluster]
         preHeaderCluster = [np.unique(v, axis=0) for v in columnLabelCluster]
         headerCluster = [[v[0] if any(char.isdigit() for char in v) else v for v in item] for item in preHeaderCluster]
@@ -24,17 +24,15 @@ class Measures(object):
         if not isSameHeader:
             raise NotImplementedError('Header doesnt match')
     def _setHeader(self):
-        labelTrack = [sorted(json['data'], key=lambda v : v[2]) for i, json in enumerate(self.files) if i <= 0][0]
-        columnLabel = np.array(labelTrack)[:,2]
-        preHeader = np.unique(columnLabel, axis=0)
+        preHeader = [v[0] if any(char.isdigit() for char in v) else v for v in np.unique(sorted([e[2] for events in self.files.values() for e in events]), axis=0)]
         self.nIntervals = len(preHeader)
-        self.header += [v[0] if any(char.isdigit() for char in v) else v for v in preHeader]
+        self.header += preHeader
     def _process(self):
         intervals, labels = [], []
         currLabel = None
         count = 0
-        for json in self.files:
-            owner, labelTrack = json['owner'], sorted(json['data'], key=lambda v : v[2])
+        for k, v in self.files.items():
+            owner, labelTrack = k, sorted(v, key=lambda v : v[2])
             for event in labelTrack:
                 label = event[2]
                 if not currLabel:
@@ -92,25 +90,21 @@ class Measures(object):
         if printRes:
             print('Mean duration per occurrence is:', mdpo)
 
-def mdpo(files):
+def mdpo(buffer):
     x = PrettyTable()
-    #z = Measures(files)
-    #z.showTable()
-    #z.mdpo()
-    #return
+    z = Measures(buffer)
+    z.showTable()
+    z.mdpo()
+    
     
     header = ['Observer']
-    labelTrack = [sorted(json['data'], key=lambda v : v[2]) for i, json in enumerate(files) if i <= 0][0]
-    columnLabel = np.array(labelTrack)[:,2]
-    preHeader = np.unique(columnLabel, axis=0)
-    header += [v[0] if any(char.isdigit() for char in v) else v for v in preHeader]
-    
+    header += [v[0] if any(char.isdigit() for char in v) else v for v in np.unique(sorted([e[2] for events in buffer.values() for e in events]), axis=0)]
     intervals, labels = [], []
     currLabel = None
     count = 0
     body = []
-    for json in files:
-        owner, labelTrack = json['owner'], sorted(json['data'], key=lambda v : v[2])
+    for k, v in buffer.items():
+        owner, labelTrack = k, sorted(v, key=lambda v : v[2])
         for event in labelTrack:
             label = event[2]
             if not currLabel:

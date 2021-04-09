@@ -1,13 +1,12 @@
 from argparse import ArgumentParser
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from app.lib import Measures, load
 from prettytable import PrettyTable
 
 class Dex(object):
-    def __init__(self, buffer, observer, showAttemps=True, offset=0.150, debug=False):
+    def __init__(self, buffer, observer, src=None, showAttemps=True, offset=0.150, debug=False):
         self.table = PrettyTable()
         self.files = buffer
         self.offset = offset
@@ -19,6 +18,7 @@ class Dex(object):
         self.dv1 = None
         self.dv2 = None
         self.showAttemps = showAttemps
+        self.src = src
         
         if observer == 0:
             self.__observer1()
@@ -75,20 +75,25 @@ class Dex(object):
         self.ratingtask = agreement.AnnotationTask(data=formatted)
     
     def graphGroupedBarplot(self):
+        import matplotlib.pyplot as plt
         barWidth = 0.25
-        r1 = np.arange(len(v1))
+        r1 = np.arange(len(self.dv1))
         r2 = [x + barWidth for x in r1]
         plt.bar(r1, self.dv1, color='#7f6d5f', width=barWidth, edgecolor='white', label='var1')
         plt.bar(r2, self.dv2, color='#557f2d', width=barWidth, edgecolor='white', label='var2')
-        plt.savefig('{0}_groupedbarplot.png'.format(self.observer + 1))
+        plt.savefig('{0}{1}_groupedbarplot.png'.format(self.src, self.observer + 1))
+        plt.clf()
     
     def graphDensityPlot(self):
+        import matplotlib.pyplot as plt
         sns.set(style="darkgrid")
         fig = sns.kdeplot(self.dv1, shade=True, color='r')
         fig = sns.kdeplot(self.dv2, shade=True, color='b')
-        plt.savefig('{0}_densityplot.png'.format(self.observer + 1))
+        plt.savefig('{0}{1}_densityplot.png'.format(self.src, self.observer + 1))
+        plt.clf()
     
     def graphDensityChart(self):
+        import matplotlib.pyplot as plt
         plt.rcParams['figure.figsize'] = 12, 8
         sns.set(style='whitegrid')
         data = pd.DataFrame({
@@ -97,15 +102,19 @@ class Dex(object):
         })
         data = pd.melt(data, var_name='observers', value_name='value')
         sns.kdeplot(data=data, x='value', hue='observers', fill=True, common_norm=False, alpha=0.6, palette='viridis')
-        plt.savefig('{0}_densitychart.png'.format(self.observer + 1))
+        plt.savefig('{0}{1}_densitychart.png'.format(self.src, self.observer + 1))
+        plt.clf()
     
     def graphHeatmap(self):
+        import matplotlib.pyplot as plt
         df = pd.DataFrame({ 'a': self.dv1, 'b': self.dv2 })
         sns.heatmap(df)
-        plt.savefig('{0}_heatmap.png'.format(self.observer + 1))
+        plt.savefig('{0}{1}_heatmap.png'.format(self.src, self.observer + 1))
+        plt.clf()
     
     def graphSpaghettiPlot(self):
-        df = pd.DataFrame({ 'x': [i for i, v in enumerate(v1)], 'y1': self.dv1, 'y2': self.dv2 })
+        import matplotlib.pyplot as plt
+        df = pd.DataFrame({ 'x': [i for i, v in enumerate(self.dv1)], 'y1': self.dv1, 'y2': self.dv2 })
         plt.style.use('seaborn-darkgrid')
         palette = plt.get_cmap('Set1')
         num = 1
@@ -116,11 +125,13 @@ class Dex(object):
         plt.title('Observer {0} - '.format(self.observer + 1), loc='left', fontsize=12, fontweight=0, color='orange')
         plt.xlabel('Time')
         plt.ylabel('Delta')
-        plt.savefig('{0}_spaghettiplot.png'.format(self.observer + 1))
+        plt.savefig('{0}{1}_spaghettiplot.png'.format(self.src, self.observer + 1))
+        plt.clf()
     
     def graphLollipopPlot(self):
+        import matplotlib.pyplot as plt
         # Create a dataframe
-        df = pd.DataFrame({ 'group': [i for i, v in enumerate(v1)], 'value1': self.dv1, 'value2': self.dv2 })
+        df = pd.DataFrame({ 'group': [i for i, v in enumerate(self.dv1)], 'value1': self.dv1, 'value2': self.dv2 })
         # Reorder it following the values of the first value:
         ordered_df = df.sort_values(by='value1')
         my_range = range(1, len(df.index) + 1)
@@ -134,7 +145,8 @@ class Dex(object):
         plt.title('Comparison of the value 1 and the value 2', loc='left')
         plt.xlabel('Value of the variables')
         plt.ylabel('Group')
-        plt.savefig('{0}_lollipopplot.png'.format(self.observer + 1))
+        plt.savefig('{0}{1}_lollipopplot.png'.format(self.src, self.observer + 1))
+        plt.clf()
     
     def showAssest(self):
         print('Assest: {}'.format(self.assest))
@@ -194,7 +206,7 @@ def main():
     #graph()
     if bLen == 2:
         # Observer 1
-        dex = Dex(buffer, observer=0, showAttemps=False)
+        dex = Dex(buffer, observer=0, showAttemps=False, src=args.sample)
         #dex.showAssest()
         #dex.kappa()
         #dex.kalpha()

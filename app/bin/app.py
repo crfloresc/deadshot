@@ -81,7 +81,7 @@ class Dex(object):
         r2 = [x + barWidth for x in r1]
         plt.bar(r1, self.dv1, color='#7f6d5f', width=barWidth, edgecolor='white', label='var1')
         plt.bar(r2, self.dv2, color='#557f2d', width=barWidth, edgecolor='white', label='var2')
-        plt.savefig('{0}{1}_groupedbarplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/{1}_groupedbarplot.png'.format(self.src, self.observer + 1))
         plt.clf()
     
     def graphDensityPlot(self):
@@ -89,7 +89,7 @@ class Dex(object):
         sns.set(style="darkgrid")
         fig = sns.kdeplot(self.dv1, shade=True, color='r')
         fig = sns.kdeplot(self.dv2, shade=True, color='b')
-        plt.savefig('{0}{1}_densityplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/{1}_densityplot.png'.format(self.src, self.observer + 1))
         plt.clf()
     
     def graphDensityChart(self):
@@ -102,14 +102,14 @@ class Dex(object):
         })
         data = pd.melt(data, var_name='observers', value_name='value')
         sns.kdeplot(data=data, x='value', hue='observers', fill=True, common_norm=False, alpha=0.6, palette='viridis')
-        plt.savefig('{0}{1}_densitychart.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/{1}_densitychart.png'.format(self.src, self.observer + 1))
         plt.clf()
     
     def graphHeatmap(self):
         import matplotlib.pyplot as plt
         df = pd.DataFrame({ 'a': self.dv1, 'b': self.dv2 })
         sns.heatmap(df)
-        plt.savefig('{0}{1}_heatmap.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/{1}_heatmap.png'.format(self.src, self.observer + 1))
         plt.clf()
     
     def graphSpaghettiPlot(self):
@@ -125,7 +125,7 @@ class Dex(object):
         plt.title('Observer {0} - '.format(self.observer + 1), loc='left', fontsize=12, fontweight=0, color='orange')
         plt.xlabel('Time')
         plt.ylabel('Delta')
-        plt.savefig('{0}{1}_spaghettiplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/{1}_spaghettiplot.png'.format(self.src, self.observer + 1))
         plt.clf()
     
     def graphLollipopPlot(self):
@@ -145,7 +145,7 @@ class Dex(object):
         plt.title('Comparison of the value 1 and the value 2', loc='left')
         plt.xlabel('Value of the variables')
         plt.ylabel('Group')
-        plt.savefig('{0}{1}_lollipopplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/{1}_lollipopplot.png'.format(self.src, self.observer + 1))
         plt.clf()
     
     def showAssest(self):

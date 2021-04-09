@@ -30,14 +30,14 @@ class Dex(object):
     def __observer1(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
         ioa, attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v1[1], v2[1])
-        if showAttemps:
+        if self.showAttemps:
             print('\n{}, attemps: {}'.format(v1[0], attemps))
         self.__test(self.comp1, self.comp2)
     
     def __observer2(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
         ioa, attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v2[1], v1[1])
-        if showAttemps:
+        if self.showAttemps:
             print('\n{}, attemps: {}'.format(v2[0], attemps))
         self.__test(self.comp1, self.comp2)
     

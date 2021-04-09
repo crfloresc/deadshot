@@ -3,4 +3,4 @@ env=develop
 sudo python3 setup.py build
 sudo python3 setup.py $env
 set -e
-exec deadshot $@ -aL 90 -s ./docs/labels/994
+exec deadshot $@ -aL 90 -s ./docs/labels/test/994

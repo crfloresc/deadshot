@@ -220,12 +220,18 @@ def main():
         dex.graphLollipopPlot()
         
         # Observer 2
-        dex = Dex(buffer, observer=1, showAttemps=False)
+        dex = Dex(buffer, observer=1, showAttemps=False, src=args.sample)
         #dex.showAssest()
         #dex.kappa()
         #dex.kalpha()
         #dex.spi()
         #dex.showComparation()
+        dex.graphGroupedBarplot()
+        dex.graphDensityPlot()
+        dex.graphDensityChart()
+        dex.graphHeatmap()
+        dex.graphSpaghettiPlot()
+        dex.graphLollipopPlot()
     else:
         raise NotImplementedError('Only accepted two observers')
     '''z = Measures(buffer, metric='label')

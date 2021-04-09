@@ -7,7 +7,7 @@ from app.lib import Measures, load
 from prettytable import PrettyTable
 
 class Dex(object):
-    def __init__(self, buffer, observer, offset=0.150, debug=False):
+    def __init__(self, buffer, observer, showAttemps=True, offset=0.150, debug=False):
         self.table = PrettyTable()
         self.files = buffer
         self.offset = offset
@@ -16,6 +16,9 @@ class Dex(object):
         self.assest = None
         self.comp1, self.comp2 = None, None
         self.observer = observer
+        self.dv1 = None
+        self.dv2 = None
+        self.showAttemps = showAttemps
         
         if observer == 0:
             self.__observer1()
@@ -26,22 +29,17 @@ class Dex(object):
     
     def __observer1(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
-        ioa, attemps, self.assest, self.comp1, self.comp2, bars1, bars2 = self.__compare(v1[1], v2[1])
-        #for v in [[v1[0]] + self.comp1]:
-        #    self.table.add_row(v)
-        #for v in [[v2[0]] + self.comp2]:
-        #    self.table.add_row(v)
-        print('\n{}, attemps: {}'.format(v1[0], attemps))
+        ioa, attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v1[1], v2[1])
+        if showAttemps:
+            print('\n{}, attemps: {}'.format(v1[0], attemps))
         self.__test(self.comp1, self.comp2)
     
     def __observer2(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
-        ioa, attemps, self.assest, self.comp1, self.comp2, bars1, bars2 = self.__compare(v2[1], v1[1])
-        #self.table.add_row([[v1[0]] + self.comp2])
-        #self.table.add_row([[v2[0]] + self.comp1])
-        print('\n{}, attemps: {}'.format(v2[0], attemps))
+        ioa, attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v2[1], v1[1])
+        if showAttemps:
+            print('\n{}, attemps: {}'.format(v2[0], attemps))
         self.__test(self.comp1, self.comp2)
-        self.graphLollipopPlot(bars1, bars2)
     
     def __compare(self, v1, v2):
         if not v1 or not v2:
@@ -73,55 +71,41 @@ class Dex(object):
     def __test(self, v1, v2):
         from sklearn.metrics import cohen_kappa_score
         from nltk import agreement
-        #import pingouin as pg
-        #import pandas as pd
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
         self.ratingtask = agreement.AnnotationTask(data=formatted)
-        #data = pd.DataFrame(data={'x':x, 'y':y})
-        #cronbach = pg.cronbach_alpha(data=data)
     
-    def graphGroupedBarplot(self, v1, v2):
+    def graphGroupedBarplot(self):
         barWidth = 0.25
         r1 = np.arange(len(v1))
         r2 = [x + barWidth for x in r1]
-        plt.bar(r1, v1, color='#7f6d5f', width=barWidth, edgecolor='white', label='var1')
-        plt.bar(r2, v2, color='#557f2d', width=barWidth, edgecolor='white', label='var2')
-        plt.show()
+        plt.bar(r1, self.dv1, color='#7f6d5f', width=barWidth, edgecolor='white', label='var1')
+        plt.bar(r2, self.dv2, color='#557f2d', width=barWidth, edgecolor='white', label='var2')
+        plt.savefig('{0}_groupedbarplot.png'.format(self.observer + 1))
     
-    def graphDensityPlot(self, v1, v2):
-        # set a grey background (use sns.set_theme() if seaborn version 0.11.0 or above)
+    def graphDensityPlot(self):
         sns.set(style="darkgrid")
-        
-        fig = sns.kdeplot(v1, shade=True, color="r")
-        fig = sns.kdeplot(v2, shade=True, color="b")
-        plt.show()
+        fig = sns.kdeplot(self.dv1, shade=True, color='r')
+        fig = sns.kdeplot(self.dv2, shade=True, color='b')
+        plt.savefig('{0}_densityplot.png'.format(self.observer + 1))
     
-    def graphDensityChart(self, v1, v2):
+    def graphDensityChart(self):
         plt.rcParams['figure.figsize'] = 12, 8
         sns.set(style='whitegrid')
         data = pd.DataFrame({
-            'a': v1,
-            'b': v2
+            'a': self.dv1,
+            'b': self.dv2
         })
-        print(data)
         data = pd.melt(data, var_name='observers', value_name='value')
-        sns.kdeplot(data=data, x='value', hue='observers', fill=True, common_norm=False, alpha=0.6, palette="viridis")
-        plt.show()
+        sns.kdeplot(data=data, x='value', hue='observers', fill=True, common_norm=False, alpha=0.6, palette='viridis')
+        plt.savefig('{0}_densitychart.png'.format(self.observer + 1))
     
-    def graphHeatmap(self, v1, v2):
-        df = pd.DataFrame({
-            'a': v1,
-            'b': v2
-        })
+    def graphHeatmap(self):
+        df = pd.DataFrame({ 'a': self.dv1, 'b': self.dv2 })
         sns.heatmap(df)
-        plt.show()
+        plt.savefig('{0}_heatmap.png'.format(self.observer + 1))
     
-    def graphSpaghettiPlot(self, v1, v2):
-        df = pd.DataFrame({
-            'x': [i for i, v in enumerate(v1)],
-            'y1': v1,
-            'y2': v2
-        })
+    def graphSpaghettiPlot(self):
+        df = pd.DataFrame({ 'x': [i for i, v in enumerate(v1)], 'y1': self.dv1, 'y2': self.dv2 })
         plt.style.use('seaborn-darkgrid')
         palette = plt.get_cmap('Set1')
         num = 1
@@ -132,16 +116,11 @@ class Dex(object):
         plt.title('Observer {0} - '.format(self.observer + 1), loc='left', fontsize=12, fontweight=0, color='orange')
         plt.xlabel('Time')
         plt.ylabel('Delta')
-        # plt.show()
         plt.savefig('{0}_spaghettiplot.png'.format(self.observer + 1))
     
-    def graphLollipopPlot(self, v1, v2):
+    def graphLollipopPlot(self):
         # Create a dataframe
-        df = pd.DataFrame({
-            'group': [i for i, v in enumerate(v1)],
-            'value1': v1,
-            'value2': v2
-        })
+        df = pd.DataFrame({ 'group': [i for i, v in enumerate(v1)], 'value1': self.dv1, 'value2': self.dv2 })
         # Reorder it following the values of the first value:
         ordered_df = df.sort_values(by='value1')
         my_range = range(1, len(df.index) + 1)
@@ -214,17 +193,26 @@ def main():
     buffer, bLen = load(path=args.sample)
     #graph()
     if bLen == 2:
-        dex = Dex(buffer, observer=0)
+        # Observer 1
+        dex = Dex(buffer, observer=0, showAttemps=False)
         #dex.showAssest()
-        dex.kappa()
-        dex.kalpha()
-        dex.spi()
+        #dex.kappa()
+        #dex.kalpha()
+        #dex.spi()
         #dex.showComparation()
-        dex = Dex(buffer, observer=1)
+        dex.graphGroupedBarplot()
+        dex.graphDensityPlot()
+        dex.graphDensityChart()
+        dex.graphHeatmap()
+        dex.graphSpaghettiPlot()
+        dex.graphLollipopPlot()
+        
+        # Observer 2
+        dex = Dex(buffer, observer=1, showAttemps=False)
         #dex.showAssest()
-        dex.kappa()
-        dex.kalpha()
-        dex.spi()
+        #dex.kappa()
+        #dex.kalpha()
+        #dex.spi()
         #dex.showComparation()
     else:
         raise NotImplementedError('Only accepted two observers')

@@ -10,7 +10,7 @@ def getAbsdir(path, file):
 
 def load(path, customValidLabels=VALID_LABELS):
     result = dict()
-    filespath = [getAbsdir(path, x) for x in listdir(path)]
+    filespath = [getAbsdir(path, x) for x in listdir(path) if x.split('.')[-1] == 'txt']
     with ExitStack() as stack:
         filesData = [stack.enter_context(open(fname)) for fname in filespath]
         for fileBuffer in filesData:

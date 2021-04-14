@@ -1,0 +1,60 @@
+Observer 1
+ZZ, attemps: [17, 64]
+Cohen's Kappa: 26.1297%
+Krippendorff's alpha: 14.7286%
+Scott's pi: 14.0571%
+
+Observer 2
+XX, attemps: [17, 32]
+Cohen's Kappa: 52.048%
+Krippendorff's alpha: 49.734%
+Scott's pi: 48.9362%
+
+Observer 1
+ZZ, attemps: [17, 64]
+Cohen's Kappa: 26.1297%
+Krippendorff's alpha: 14.7286%
+Scott's pi: 14.0571%
+
+Observer 2
+XX, attemps: [17, 32]
+Cohen's Kappa: 52.048%
+Krippendorff's alpha: 49.734%
+Scott's pi: 48.9362%
+
+Observer 1
+ZZ, attemps: [17, 64]
+Cohen's Kappa: 26.1297%
+Krippendorff's alpha: 14.7286%
+Scott's pi: 14.0571%
+
+Observer 2
+XX, attemps: [17, 32]
+Cohen's Kappa: 52.048%
+Krippendorff's alpha: 49.734%
+Scott's pi: 48.9362%
+
+Observer 1
+ZZ, attemps: [17, 64]
+Cohen's Kappa: 26.1297%
+Krippendorff's alpha: 14.7286%
+Scott's pi: 14.0571%
+
+Observer 2
+XX, attemps: [17, 32]
+Cohen's Kappa: 52.048%
+Krippendorff's alpha: 49.734%
+Scott's pi: 48.9362%
+
+Observer 1
+ZZ, attemps: [17, 64]
+Cohen's Kappa: 26.1297%
+Krippendorff's alpha: 14.7286%
+Scott's pi: 14.0571%
+
+Observer 2
+XX, attemps: [17, 32]
+Cohen's Kappa: 52.048%
+Krippendorff's alpha: 49.734%
+Scott's pi: 48.9362%
+

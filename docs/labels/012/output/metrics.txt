@@ -1,0 +1,12 @@
+Observer 1
+ZZ, attemps: [27, 32]
+Cohen's Kappa: 83.7563%
+Krippendorff's alpha: 83.8875%
+Scott's pi: 83.6317%
+
+Observer 2
+XX, attemps: [27, 30]
+Cohen's Kappa: 89.5713%
+Krippendorff's alpha: 89.7093%
+Scott's pi: 89.5349%
+

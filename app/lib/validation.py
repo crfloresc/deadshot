@@ -23,7 +23,7 @@ def validate(file):
             result['data'] += [[start, end, label]]
     return result
 
-def bufferValidate(buffer, customValidLabels):
+def bufferValidate(buffer, customValidLabels, limit):
     currOwner, temp = None, []
     for line in buffer.readlines():
         lineFormated = formatLine(line)
@@ -34,6 +34,8 @@ def bufferValidate(buffer, customValidLabels):
         label = lineFormated[2]
         if label in customValidLabels:
             start = float(lineFormated[0].replace(',','.'))
+            if start >= limit:
+                continue
             end = float(lineFormated[1].replace(',','.'))
             temp.append([start, end, label])
     return dict({currOwner: temp})

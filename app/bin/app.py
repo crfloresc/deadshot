@@ -18,6 +18,8 @@ class Dex(object):
         self.dv1 = None
         self.dv2 = None
         self.showAttemps = showAttemps
+        self.attemps = 0
+        self.oName = None
         self.src = src
         
         if observer == 0:
@@ -29,16 +31,18 @@ class Dex(object):
     
     def __observer1(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
-        ioa, attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v1[1], v2[1])
+        ioa, self.attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v1[1], v2[1])
+        self.oName = v1[0]
         if self.showAttemps:
-            print('\n{}, attemps: {}'.format(v1[0], attemps))
+            print('\n{}, attemps: {}'.format(v1[0], self.attemps))
         self.__test(self.comp1, self.comp2)
     
     def __observer2(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
-        ioa, attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v2[1], v1[1])
+        ioa, self.attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v2[1], v1[1])
+        self.oName = v2[0]
         if self.showAttemps:
-            print('\n{}, attemps: {}'.format(v2[0], attemps))
+            print('\n{}, attemps: {}'.format(v2[0], self.attemps))
         self.__test(self.comp1, self.comp2)
     
     def __compare(self, v1, v2):
@@ -76,21 +80,26 @@ class Dex(object):
     
     def graphGroupedBarplot(self):
         import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 5), dpi=80)
         barWidth = 0.25
         r1 = np.arange(len(self.dv1))
         r2 = [x + barWidth for x in r1]
         plt.bar(r1, self.dv1, color='#7f6d5f', width=barWidth, edgecolor='white', label='var1')
         plt.bar(r2, self.dv2, color='#557f2d', width=barWidth, edgecolor='white', label='var2')
-        plt.savefig('{0}/{1}_groupedbarplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/output/{1}_groupedbarplot.png'.format(self.src, self.observer + 1))
+        plt.cla()
         plt.clf()
+        plt.close()
     
     def graphDensityPlot(self):
         import matplotlib.pyplot as plt
         sns.set(style="darkgrid")
         fig = sns.kdeplot(self.dv1, shade=True, color='r')
         fig = sns.kdeplot(self.dv2, shade=True, color='b')
-        plt.savefig('{0}/{1}_densityplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/output/{1}_densityplot.png'.format(self.src, self.observer + 1))
+        plt.cla()
         plt.clf()
+        plt.close()
     
     def graphDensityChart(self):
         import matplotlib.pyplot as plt
@@ -102,18 +111,24 @@ class Dex(object):
         })
         data = pd.melt(data, var_name='observers', value_name='value')
         sns.kdeplot(data=data, x='value', hue='observers', fill=True, common_norm=False, alpha=0.6, palette='viridis')
-        plt.savefig('{0}/{1}_densitychart.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/output/{1}_densitychart.png'.format(self.src, self.observer + 1))
+        plt.cla()
         plt.clf()
+        plt.close()
     
     def graphHeatmap(self):
         import matplotlib.pyplot as plt
+        plt.figure(figsize=(45, 20), dpi=80)
         df = pd.DataFrame({ 'a': self.dv1, 'b': self.dv2 })
         sns.heatmap(df)
-        plt.savefig('{0}/{1}_heatmap.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/output/{1}_heatmap.png'.format(self.src, self.observer + 1))
+        plt.cla()
         plt.clf()
+        plt.close()
     
     def graphSpaghettiPlot(self):
         import matplotlib.pyplot as plt
+        plt.figure(figsize=(45, 20), dpi=80)
         df = pd.DataFrame({ 'x': [i for i, v in enumerate(self.dv1)], 'y1': self.dv1, 'y2': self.dv2 })
         plt.style.use('seaborn-darkgrid')
         palette = plt.get_cmap('Set1')
@@ -125,15 +140,18 @@ class Dex(object):
         plt.title('Observer {0} - '.format(self.observer + 1), loc='left', fontsize=12, fontweight=0, color='orange')
         plt.xlabel('Time')
         plt.ylabel('Delta')
-        plt.savefig('{0}/{1}_spaghettiplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/output/{1}_spaghettiplot.png'.format(self.src, self.observer + 1))
+        plt.cla()
         plt.clf()
+        plt.close()
     
     def graphLollipopPlot(self):
         import matplotlib.pyplot as plt
+        plt.figure(figsize=(30, 20), dpi=80)
         # Create a dataframe
         df = pd.DataFrame({ 'group': [i for i, v in enumerate(self.dv1)], 'value1': self.dv1, 'value2': self.dv2 })
         # Reorder it following the values of the first value:
-        ordered_df = df.sort_values(by='value1')
+        ordered_df = df # df.sort_values(by='value1')
         my_range = range(1, len(df.index) + 1)
         # The horizontal plot is made using the hline function
         plt.hlines(y=my_range, xmin=ordered_df['value1'], xmax=ordered_df['value2'], color='grey', alpha=0.4)
@@ -145,8 +163,10 @@ class Dex(object):
         plt.title('Comparison of the value 1 and the value 2', loc='left')
         plt.xlabel('Value of the variables')
         plt.ylabel('Group')
-        plt.savefig('{0}/{1}_lollipopplot.png'.format(self.src, self.observer + 1))
+        plt.savefig('{0}/output/{1}_lollipopplot.png'.format(self.src, self.observer + 1))
+        plt.cla()
         plt.clf()
+        plt.close()
     
     def showAssest(self):
         print('Assest: {}'.format(self.assest))
@@ -174,64 +194,50 @@ class Dex(object):
         if printRes:
             print('Scott\'s pi: {}%'.format(round(pi * 100, 4)))
         return pi
-
-def graph():
-    import seaborn as sns
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
     
-    # Create a dataset
-    data = np.array([
-        [0.58191293, 0.49939776, 0.58191293, 0.58191293, 0.58191293, 0.58191293, 0.58191293, 0.58191293, 0.58191293, 0.58191293],
-        [0.49939776, 0.58191293, 0.58191293, 0.58191293, 0.58191293, 0.49939776, 0.58191293, 0.58191293, 0.49939776, 0.58191293]])
-    #data = np.random.random((2,10))
-    #print(data)
-    df = pd.DataFrame(data, columns=["a","b","c","d","e","f","g","h","i","j"])
-    # plot a heatmap with annotation
-    sns.heatmap(df, annot=True, annot_kws={"size": 7}, cbar=False)
-    plt.show()
+    def saveMetrics(self):
+        filename = '{0}/output/metrics.txt'.format(self.src)
+        with open(filename, 'a') as out:
+            out.write('Observer {0}\n'.format(self.observer + 1))
+            out.write('{0}, attemps: {1}\n'.format(self.oName, self.attemps))
+            out.write('Cohen\'s Kappa: {0}%\n'.format(round(self.kappa(printRes=False) * 100, 4)))
+            out.write('Krippendorff\'s alpha: {0}%\n'.format(round(self.kalpha(printRes=False) * 100, 4)))
+            out.write('Scott\'s pi: {0}%\n\n'.format(round(self.spi(printRes=False) * 100, 4)))
 
 def getArgs():
     parser = ArgumentParser(prog='deadshot', description='Arguments being passed to the program')
-    parser.add_argument('--audiolen', '-aL', required=False, default=60, help='Audio lenght')
-    parser.add_argument('--sample', '-s', required=True, default='./sample', help='Sample path')
+    parser.add_argument('--limit', '-aL', required=False, default=60, help='Audio lenght')
+    parser.add_argument('--sample', '-sp', required=True, default='./sample', help='Sample path')
+    parser.add_argument('--rev', '-r', required=True, help='Revision of file')
+    parser.add_argument('--offset', '-do', required=False, default=0.150, help='Offset')
     return parser.parse_args()
 
 def main():
     args = getArgs()
     print(args)
     
-    buffer, bLen = load(path=args.sample)
-    #graph()
+    buffer, bLen = load(path=args.sample, rev=args.rev, limit=float(args.limit))
     if bLen == 2:
+        offset = float(args.offset)
         # Observer 1
-        dex = Dex(buffer, observer=0, showAttemps=False, src=args.sample)
-        #dex.showAssest()
-        #dex.kappa()
-        #dex.kalpha()
-        #dex.spi()
-        #dex.showComparation()
+        dex = Dex(buffer, observer=0, showAttemps=False, src=args.sample, offset=offset)
         dex.graphGroupedBarplot()
         dex.graphDensityPlot()
         dex.graphDensityChart()
         dex.graphHeatmap()
         dex.graphSpaghettiPlot()
         dex.graphLollipopPlot()
+        dex.saveMetrics()
         
         # Observer 2
-        dex = Dex(buffer, observer=1, showAttemps=False, src=args.sample)
-        #dex.showAssest()
-        #dex.kappa()
-        #dex.kalpha()
-        #dex.spi()
-        #dex.showComparation()
+        dex = Dex(buffer, observer=1, showAttemps=False, src=args.sample, offset=offset)
         dex.graphGroupedBarplot()
         dex.graphDensityPlot()
         dex.graphDensityChart()
         dex.graphHeatmap()
         dex.graphSpaghettiPlot()
         dex.graphLollipopPlot()
+        dex.saveMetrics()
     else:
         raise NotImplementedError('Only accepted two observers')
     '''z = Measures(buffer, metric='label')

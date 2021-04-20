@@ -15,6 +15,8 @@ class Dex(object):
         self.assest = None
         self.comp1, self.comp2 = None, None
         self.observer = observer
+        self.sv1 = None
+        self.sv2 = None
         self.dv1 = None
         self.dv2 = None
         self.showAttemps = showAttemps
@@ -31,7 +33,7 @@ class Dex(object):
     
     def __observer1(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
-        ioa, self.attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2 = self.__compare(v1[1], v2[1])
+        ioa, self.attemps, self.assest, self.comp1, self.comp2, self.dv1, self.dv2, self.sv1 = self.__compare(v1[1], v2[1])
         self.oName = v1[0]
         if self.showAttemps:
             print('\n{}, attemps: {}'.format(v1[0], self.attemps))
@@ -53,10 +55,12 @@ class Dex(object):
         va1 = [0 for v in cv1]
         
         bars1, bars2 = [], [-1 for v in cv1]
+        startV1 = []
         xPlot, yPlot = [], [-1 for v in cv1]
         for i, e1 in enumerate(cv1):
             xPlot.append(round(e1[0]))
             bars1.append(e1[1] - e1[0])
+            startV1.append([e1[0], e1[1] - e1[0], e1[2]])
             for e2 in cv2:
                 diffStart, diffEnd = abs(e1[0] - e2[0]), abs(e1[1] - e2[1])
                 if i == 2 and self.debug:
@@ -70,7 +74,7 @@ class Dex(object):
                     va1[i] += 1
                     cv2.remove(e2)
                     break
-        return agree/len(cv1)*100, [agree, len(cv1)], va1, xPlot, yPlot, bars1, bars2
+        return agree/len(cv1)*100, [agree, len(cv1)], va1, xPlot, yPlot, bars1, bars2, startV1
     
     def __test(self, v1, v2):
         from sklearn.metrics import cohen_kappa_score
@@ -79,23 +83,58 @@ class Dex(object):
         self.ratingtask = agreement.AnnotationTask(data=formatted)
     
     def graphBrokenBarh(self):
-        import matplotlib.pyplot as plt
+        # problema con 2 etiquetas en el mismo espacio de tiempo
+        # solo segundos (int)
+        '''import matplotlib.pyplot as plt
+        import math
         fig, ax = plt.subplots()
-        ax.broken_barh([(110, 30), (150, 10)], (10, 9), facecolors='tab:blue')
-        ax.broken_barh([(10, 50), (100, 20), (130, 10)], (20, 9),
-               facecolors=('tab:orange', 'tab:green', 'tab:red'))
+        colormapping = {'R':'tab:cyan','M1':'tab:blue','N1':'tab:green','VF':'tab:purple','AM':'tab:orange'}
+        verts, colors = [], []
+        for d in self.sv1:
+            verts.append((math.ceil(d[0]), math.ceil(d[1])))
+            colors.append(colormapping[d[2]])
+        print(verts)
+        print(colors)
+        ax.broken_barh(
+            verts,
+            (10, 9),
+            facecolors=colors
+        )
+        ax.broken_barh(
+            [(0.15, 1), (3.17, 2), (0.45, 2), (130, 10)],
+            (20, 9),
+            facecolors=('tab:blue', 'tab:orange', 'tab:green', 'tab:red')
+        )
         ax.set_ylim(5, 35)
-        ax.set_xlim(0, 200)
+        ax.set_xlim(0, 90)
         ax.set_xlabel('seconds since start')
         ax.set_yticks([15, 25])
         ax.set_yticklabels(['Observer 1', 'Observer 2'])
         ax.grid(True)
-        ax.annotate('race interrupted', (61, 25),
-            xytext=(0.8, 0.9), textcoords='axes fraction',
-            arrowprops=dict(facecolor='black', shrink=0.05),
-            fontsize=16,
-            horizontalalignment='right', verticalalignment='top')
-        plt.show()
+        plt.show()'''
+        from bokeh.plotting import figure, output_file, show
+        colormap = {'VF': 'red', 'N1': 'green', 'M1': 'blue', 'AM': 'purple', 'R': 'black'}
+        data = {'data':[],'observer':[],'colors':[]}
+        p = figure(title = 'Some')
+        for x in self.sv1:
+            data['data'].append(x[0])
+            data['observer'].append(0.25)
+            data['colors'].append(colormap[x[2]])
+            data['data'].append(x[0])
+            data['observer'].append(0.2)
+            data['colors'].append(colormap[x[2]])
+            p.line([x[0], x[0]+x[1]], [0.2, 0.2], line_color=colormap[x[2]], line_width=3)
+        colors = [colormap[x[2]] for x in self.sv1]
+        #data = [x[0] for x in self.sv1]
+        
+        p.xaxis.axis_label = 'Timeline'
+        p.yaxis.axis_label = 'Observer'
+        p.line(0, 1, legend_label="Rate", line_color="red", line_width=2)
+        p.line(0, 0, legend_label="Rate", line_color="red", line_width=2)
+        p.circle(data['data'], data['observer'],
+         color=data['colors'], fill_alpha=0.2, size=10)
+        #output_file("iris.html", title="iris.py example")
+        show(p)
     
     def graphGroupedBarplot(self):
         import matplotlib.pyplot as plt
@@ -240,23 +279,12 @@ def main():
         offset = float(args.offset)
         # Observer 1
         dex = Dex(buffer, observer=0, showAttemps=False, src=args.sample, offset=offset)
-        dex.graphGroupedBarplot()
-        dex.graphDensityPlot()
-        dex.graphDensityChart()
-        dex.graphHeatmap()
-        dex.graphSpaghettiPlot()
-        dex.graphLollipopPlot()
-        dex.saveMetrics()
+        dex.graphBrokenBarh()
+        #dex.saveMetrics()
         
         # Observer 2
         dex = Dex(buffer, observer=1, showAttemps=False, src=args.sample, offset=offset)
-        dex.graphGroupedBarplot()
-        dex.graphDensityPlot()
-        dex.graphDensityChart()
-        dex.graphHeatmap()
-        dex.graphSpaghettiPlot()
-        dex.graphLollipopPlot()
-        dex.saveMetrics()
+        #dex.saveMetrics()
     else:
         raise NotImplementedError('Only accepted two observers')
     '''z = Measures(buffer, metric='label')

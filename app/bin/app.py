@@ -78,6 +78,25 @@ class Dex(object):
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
         self.ratingtask = agreement.AnnotationTask(data=formatted)
     
+    def graphBrokenBarh(self):
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        ax.broken_barh([(110, 30), (150, 10)], (10, 9), facecolors='tab:blue')
+        ax.broken_barh([(10, 50), (100, 20), (130, 10)], (20, 9),
+               facecolors=('tab:orange', 'tab:green', 'tab:red'))
+        ax.set_ylim(5, 35)
+        ax.set_xlim(0, 200)
+        ax.set_xlabel('seconds since start')
+        ax.set_yticks([15, 25])
+        ax.set_yticklabels(['Observer 1', 'Observer 2'])
+        ax.grid(True)
+        ax.annotate('race interrupted', (61, 25),
+            xytext=(0.8, 0.9), textcoords='axes fraction',
+            arrowprops=dict(facecolor='black', shrink=0.05),
+            fontsize=16,
+            horizontalalignment='right', verticalalignment='top')
+        plt.show()
+    
     def graphGroupedBarplot(self):
         import matplotlib.pyplot as plt
         plt.figure(figsize=(10, 5), dpi=80)

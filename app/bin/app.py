@@ -5,30 +5,6 @@ import pandas as pd
 from app.lib import Measures, load
 from prettytable import PrettyTable
 
-class Mapper(object):
-    def __init__(self, lsts):
-        self._lsts = lsts
-        self._lens = list(map(len, lsts))
-        self._total_len = sum(self._lens)
-
-    def __getitem__(self, abs_idx):
-        if abs_idx < 0 or abs_idx >= self._total_len:
-            raise ValueError()
-        rel_idx = self.to_double_idx(abs_idx)
-        assert rel_idx != -1
-        return self._lsts[rel_idx[0]][rel_idx[1]]
-
-    def __len__(self):
-        return self._total_len
-
-    def to_double_idx(self, abs_idx):
-        rel_idx = abs_idx
-        for lst_idx, lst_len in enumerate(self._lens):
-            if rel_idx < lst_len:
-                return (lst_idx, rel_idx)
-            rel_idx -= lst_len
-        return -1
-
 class Dex(object):
     def __init__(self, buffer, observer, src=None, showAttemps=True, offset=0.150, debug=False):
         self.table = PrettyTable()
@@ -68,20 +44,12 @@ class Dex(object):
             if i1 == i2 and x3 == lsts[i1][2]:
                 return i1
         return -1
-    '''def locate(self, lsts, x):
-        import bisect
-        mapper = Mapper(lsts)
-        i = bisect.bisect_left(mapper, x)
-        if i != len(mapper) and mapper[i] <= x + 0.300:
-            return mapper.to_double_idx(i)
-        return -1'''
 
     def process(self):
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
         o2, v2 = data2
-        #ix = self.locate(v1, 0.000000, 0.190078, 'R')
-        #print(ix)
+
         for e in v2:
             ix = self.locate(v1, e[0], e[1], e[2])
             if ix > -1:
@@ -89,9 +57,6 @@ class Dex(object):
                 del v1[ix]
             else:
                 print('BAD', o2, e)
-        #ixs = self.locate(v1, 23.105621)
-        #print('IXS ', ixs)
-        #print(v1[ixs[0]])
         self.__compare(v1, v2, 'observer1')
         self.__compare(v2, v1, 'observer2')
 

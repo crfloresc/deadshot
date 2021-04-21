@@ -49,7 +49,7 @@ class Dex(object):
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
         o2, v2 = data2
-
+        print(*v1)
         for e in v2:
             ix = self.locate(v1, e[0], e[1], e[2])
             if ix > -1:

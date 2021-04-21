@@ -5,6 +5,30 @@ import pandas as pd
 from app.lib import Measures, load
 from prettytable import PrettyTable
 
+class Mapper(object):
+    def __init__(self, lsts):
+        self._lsts = lsts
+        self._lens = list(map(len, lsts))
+        self._total_len = sum(self._lens)
+
+    def __getitem__(self, abs_idx):
+        if abs_idx < 0 or abs_idx >= self._total_len:
+            raise ValueError()
+        rel_idx = self.to_double_idx(abs_idx)
+        assert rel_idx != -1
+        return self._lsts[rel_idx[0]][rel_idx[1]]
+
+    def __len__(self):
+        return self._total_len
+
+    def to_double_idx(self, abs_idx):
+        rel_idx = abs_idx
+        for lst_idx, lst_len in enumerate(self._lens):
+            if rel_idx < lst_len:
+                return (lst_idx, rel_idx)
+            rel_idx -= lst_len
+        return -1
+
 class Dex(object):
     def __init__(self, buffer, observer, src=None, showAttemps=True, offset=0.150, debug=False):
         self.table = PrettyTable()
@@ -25,12 +49,52 @@ class Dex(object):
         self.oName = None
         self.src = src
         self.process()
-    
+
+    def locate(self, lsts, x1, x2, x3, offset=0.300, debug=False):
+        import bisect
+        if (debug): print('\n', 'START', x1, x2, x3)
+        meta = [lst[0] for lst in lsts]
+        i1 = bisect.bisect_left(meta, x1 - offset)
+        if (debug): print('i1', i1, x1, lsts[i1])
+
+        if i1 != len(meta):
+            lst = lsts[i1][:2]
+            meta = [lst[1] for lst in lsts]
+            if lst[1] < x2 + offset:
+                offset = -offset
+            if (debug): print('LIST', lst, 'OFFSET', offset, 'X2-OFF', x2 + offset)
+            i2 = bisect.bisect_right(meta, x2 + offset)
+            if (debug): print('i2', i2, x2, lsts[i2])
+            if i1 == i2 and x3 == lsts[i1][2]:
+                return i1
+        return -1
+    '''def locate(self, lsts, x):
+        import bisect
+        mapper = Mapper(lsts)
+        i = bisect.bisect_left(mapper, x)
+        if i != len(mapper) and mapper[i] <= x + 0.300:
+            return mapper.to_double_idx(i)
+        return -1'''
+
     def process(self):
-        v1, v2 = ((k, v) for k, v in self.files.items())
-        self.__compare(v1[1], v2[1], 'observer1')
-        self.__compare(v2[1], v1[1], 'observer2')
-    
+        data1, data2 = ((k, v) for k, v in self.files.items())
+        o1, v1 = data1
+        o2, v2 = data2
+        #ix = self.locate(v1, 0.000000, 0.190078, 'R')
+        #print(ix)
+        for e in v2:
+            ix = self.locate(v1, e[0], e[1], e[2])
+            if ix > -1:
+                print(' ---- RESULT', o1, v1[ix], 'vs', o2, e)
+                del v1[ix]
+            else:
+                print('BAD', o2, e)
+        #ixs = self.locate(v1, 23.105621)
+        #print('IXS ', ixs)
+        #print(v1[ixs[0]])
+        self.__compare(v1, v2, 'observer1')
+        self.__compare(v2, v1, 'observer2')
+
     def __observer1(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
         self.__compare(v1[1], v2[1])
@@ -38,7 +102,7 @@ class Dex(object):
         if self.showAttemps:
             print('\n{}, attemps: {}'.format(v1[0], self.attemps))
         self.__test(self.comp1, self.comp2)
-    
+
     def __observer2(self):
         v1, v2 = ((k, v) for k, v in self.files.items())
         self.__compare(v2[1], v1[1])
@@ -46,14 +110,14 @@ class Dex(object):
         if self.showAttemps:
             print('\n{}, attemps: {}'.format(v2[0], self.attemps))
         self.__test(self.comp1, self.comp2)
-    
+
     def __compare(self, v1, v2, observer):
         if not v1 or not v2:
             return None
         cv1, cv2 = v1.copy(), v2.copy()
         start, end, agree = None, None, 0
         va1 = [0 for v in cv1]
-        
+
         bars1, bars2 = [], [-1 for v in cv1]
         startV1 = []
         xPlot, yPlot = [], [-1 for v in cv1]
@@ -79,13 +143,13 @@ class Dex(object):
         self.comp1, self.comp2 = xPlot, yPlot
         self.sv1 = startV1
         self.data[observer] += startV1
-    
+
     def __test(self, v1, v2):
         from sklearn.metrics import cohen_kappa_score
         from nltk import agreement
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
         self.ratingtask = agreement.AnnotationTask(data=formatted)
-    
+
     def graphBrokenBarh(self):
         # problema con 2 etiquetas en el mismo espacio de tiempo
         # solo segundos (int)
@@ -120,11 +184,11 @@ class Dex(object):
         colormap = {'VF': 'red', 'N1': 'green', 'M1': 'blue', 'AM': 'purple', 'R': 'black'}
         observermap = {'observer1': 0.25, 'observer2': 0.2}
         markmap = {'observer1': 'hex', 'observer2': 'triangle'}
-        
+
         p = figure(title = 'Some')
         p.xaxis.axis_label = 'Timeline'
         p.yaxis.axis_label = 'Observer'
-        
+
         data = {'data':[],'observer':[],'colors':[], 'marks': []}
         for k, v in self.data.items():
             for e in v:
@@ -137,17 +201,17 @@ class Dex(object):
             p.scatter(data['data'], data['observer'],
          color=data['colors'], marker=data['marks'], legend_label=k, fill_alpha=0.2, size=10)
             data = {'data':[],'observer':[],'colors':[], 'marks': []}
-        
+
         p.line(0, 1, line_color="red", line_width=2)
         p.line(0, 0, line_color="red", line_width=2)
         show(p)
-    
+
     def kappa(self, printRes=True):
         kappa = self.ratingtask.kappa()
         if printRes:
             print('Cohen\'s Kappa: {}%'.format(round(kappa * 100, 4)))
         return kappa
-    
+
     def saveMetrics(self):
         filename = '{0}/output/metrics.txt'.format(self.src)
         with open(filename, 'a') as out:
@@ -165,12 +229,12 @@ def getArgs():
 
 def main():
     args = getArgs()
-    
+
     buffer, bLen = load(path=args.sample, rev=args.rev, limit=float(args.limit))
     if bLen == 2:
         offset = float(args.offset)
         dex = Dex(buffer, observer=0, showAttemps=False, src=args.sample, offset=offset)
-        dex.graphBrokenBarh()
+        #dex.graphBrokenBarh()
     else:
         raise NotImplementedError('Only accepted two observers')
 

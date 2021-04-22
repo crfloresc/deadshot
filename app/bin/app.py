@@ -3,140 +3,151 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 from app.lib import Measures, load
-from prettytable import PrettyTable
 
 class Dex(object):
-    def __init__(self, buffer, observer, src=None, showAttemps=True, offset=0.150, debug=False):
-        self.table = PrettyTable()
+    def __init__(self, buffer, src=None, offset=0.150, debug=False):
         self.files = buffer
         self.offset = offset
         self.debug = debug
         self.ratingtask = None
         self.assest = None
-        self.comp1, self.comp2 = None, None
-        self.observer = observer
-        self.sv1 = None
-        self.sv2 = None
-        self.dv1 = None
-        self.dv2 = None
-        self.data = {'observer1': [], 'observer2': []}
-        self.showAttemps = showAttemps
-        self.attemps = 0
         self.oName = None
+        self.test = {}
         self.src = src
-        self.process()
+        # For processing
+        self.data = {}
+        self.agreements = {}
+        self.attemps = {}
+        # For chart
+        self.colormap = {}
+        self.observermap = {}
+        self.markermap = {}
 
-    def locate(self, lsts, x1, x2, x3, offset=0.300, debug=False):
-        import bisect
-        if (debug): print('\n', 'START', x1, x2, x3)
-        meta = [lst[0] for lst in lsts]
-        i1 = bisect.bisect_left(meta, x1 - offset)
-        if (debug): print('i1', i1, x1, lsts[i1])
+        self.__setupDicts()
+        self.__process()
 
-        if i1 != len(meta):
-            lst = lsts[i1][:2]
-            meta = [lst[1] for lst in lsts]
-            if lst[1] < x2 + offset:
-                offset = -offset
-            if (debug): print('LIST', lst, 'OFFSET', offset, 'X2-OFF', x2 + offset)
-            i2 = bisect.bisect_right(meta, x2 + offset)
-            if (debug): print('i2', i2, x2, lsts[i2])
-            if i1 == i2 and x3 == lsts[i1][2]:
+    def __setupDicts(self):
+        val = 0.40
+        markers = ['circle', 'circle'] # ['hex', 'triangle']
+        self.colormap = {'VF': 'red', 'N1': 'green', 'M1': 'blue', 'AM': 'purple', 'R': 'black'}
+        for k, v in self.files.items():
+            val = val - 0.05
+            self.data[k] = []
+            self.agreements[k] = []
+            self.attemps[k] = []
+            self.observermap[k] = val
+            self.markermap[k] = markers[0]
+            del markers[0]
+
+    def __locate(self, lsts, x1, x2, x3):
+        from bisect import bisect_left
+        #print('Start:', 'x1:', x1, 'x2:', x2, 'x3:', x3, 'diff:', abs(x2 - x1))
+        offset, diff = self.offset, abs(x2 - x1)
+        meta1, meta2 = [lst[0] for lst in lsts], [lst[1] for lst in lsts]
+        i1, i2 = None, None
+        if diff > 3.75:
+            i1 = bisect_left(meta1, x1)
+        else:
+            i1 = bisect_left(meta1, x1 - offset)
+        i2 = bisect_left(meta2, x2 - offset)
+
+        if i1 != len(meta1):
+            #print('1 -', lsts[i1])
+            if abs(lsts[i1][0] - x1) <= offset and abs(lsts[i1][1] - x2) <= offset and lsts[i1][2] == x3:
+                #print('AGREE!')
                 return i1
+        if i2 != len(meta2):
+            #print('2 -', lsts[i2])
+            if abs(lsts[i2][0] - x1) <= offset and abs(lsts[i2][1] - x2) <= offset and lsts[i2][2] == x3:
+                #print('AGREE!')
+                return i2
+        '''
+        i1 = bisect_left(meta1, x1 - offset)
+        i1t1 = bisect_left(meta1, x1 + offset)
+        i1t2 = bisect_left(meta1, x1)
+        i2 = bisect_left(meta2, x2 - offset)
+        i2t1 = bisect_left(meta2, x2 + offset)
+        i2t2 = bisect_left(meta2, x2)
+        if i1 != len(meta1) and i2 != len(meta2):
+            print('1 -', lsts[i1], '2 -', lsts[i2])
+            if i1t1 != len(meta1) and i2t1 != len(meta2):
+                print('1p -', lsts[i1t1], '2p -', lsts[i2t1])
+            if i1t2 != len(meta1) and i2t2 != len(meta2):
+                print('1n -', lsts[i1t2], '2n -', lsts[i2t2])
+            lst1, lst2 = lsts[i1], lsts[i2]
+            if i1 == i2 and lst1[0] == lst2[0] and lst1[1] == lst2[1] and lst1[2] == lst2[2]:
+                i, start, end, label = i1, *lst1
+                #print(lst1)
+                #print(abs(olst[0] - x1), abs(olst[1] - x2), olst[2] == x3)
+                if abs(start - x1) <= offset and abs(end - x2) <= offset and label == x3:
+                    print('AGREE!')
+                    return i'''
         return -1
 
-    def process(self):
+    def __process(self):
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
         o2, v2 = data2
-        print(*v1)
-        for e in v2:
-            ix = self.locate(v1, e[0], e[1], e[2])
+
+        '''for e in v2:
+            ix = self.__locate(v1, e[0], e[1], e[2])
             if ix > -1:
+                self.data['observer1'].append(v1[ix])
                 print(' ---- RESULT', o1, v1[ix], 'vs', o2, e)
                 del v1[ix]
             else:
-                print('BAD', o2, e)
-        self.__compare(v1, v2, 'observer1')
-        self.__compare(v2, v1, 'observer2')
+                print('BAD', o2, e)'''
+        self.__compare(v1, v2, o1, o2)
+        self.__compare(v2, v1, o2, o1)
+        lens = [len(v) for k, v in self.agreements.items()]
+        if lens[0] != lens[1]:
+            print(self.agreements)
+            print(lens)
+        else:
+            print(lens)
 
-    def __observer1(self):
-        v1, v2 = ((k, v) for k, v in self.files.items())
-        self.__compare(v1[1], v2[1])
-        self.oName = v1[0]
-        if self.showAttemps:
-            print('\n{}, attemps: {}'.format(v1[0], self.attemps))
-        self.__test(self.comp1, self.comp2)
-
-    def __observer2(self):
-        v1, v2 = ((k, v) for k, v in self.files.items())
-        self.__compare(v2[1], v1[1])
-        self.oName = v2[0]
-        if self.showAttemps:
-            print('\n{}, attemps: {}'.format(v2[0], self.attemps))
-        self.__test(self.comp1, self.comp2)
-
-    def __compare(self, v1, v2, observer):
+    def __compare(self, v1, v2, observer1, observer2):
         if not v1 or not v2:
             return None
         cv1, cv2 = v1.copy(), v2.copy()
-        start, end, agree = None, None, 0
-        va1 = [0 for v in cv1]
-
-        bars1, bars2 = [], [-1 for v in cv1]
-        startV1 = []
-        xPlot, yPlot = [], [-1 for v in cv1]
-        for i, e1 in enumerate(cv1):
-            xPlot.append(round(e1[0]))
-            bars1.append(e1[1] - e1[0])
-            startV1.append([e1[0], e1[1] - e1[0], e1[1], e1[2]])
-            for e2 in cv2:
-                diffStart, diffEnd = abs(e1[0] - e2[0]), abs(e1[1] - e2[1])
-                if i == 2 and self.debug:
-                    print(e1, e2)
-                    print(diffStart, diffEnd, diffStart >= 0, diffEnd >= 0, diffEnd <= self.offset, e1[2] == e2[2])
-                if diffStart >= 0 and diffStart <= self.offset and diffEnd >= 0 and diffEnd <= self.offset and e1[2] == e2[2]:
-                    if self.debug: print(diffStart, diffEnd, e1[2])
-                    yPlot[i] = round(e1[0])
-                    bars2[i] = e2[1] - e2[0]
-                    agree += 1
-                    va1[i] += 1
-                    cv2.remove(e2)
-                    break
-        self.attemps = [agree, len(cv1)]
-        self.assest = va1
-        self.comp1, self.comp2 = xPlot, yPlot
-        self.sv1 = startV1
-        self.data[observer] += startV1
+        for e in cv1:
+            self.data[observer1].append(e)
+            ix = self.__locate(cv2, e[0], e[1], e[2])
+            #print()
+            if ix > -1:
+                self.agreements[observer2].append(cv2[ix])
+                self.attemps[observer1].append(1)
+                del cv2[ix]
+            else:
+                self.attemps[observer1].append(0)
 
     def __test(self, v1, v2):
-        from sklearn.metrics import cohen_kappa_score
-        from nltk import agreement
+        from nltk.agreement import AnnotationTask
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
-        self.ratingtask = agreement.AnnotationTask(data=formatted)
+        self.ratingtask = AnnotationTask(data=formatted)
 
-    def graphBrokenBarh(self):
-        # problema con 2 etiquetas en el mismo espacio de tiempo
-        # solo segundos (int)
-        '''import matplotlib.pyplot as plt
+    def old_graphBrokenBarh(self):
+        import matplotlib.pyplot as plt
         import math
         fig, ax = plt.subplots()
         colormapping = {'R':'tab:cyan','M1':'tab:blue','N1':'tab:green','VF':'tab:purple','AM':'tab:orange'}
         verts, colors = [], []
-        for d in self.sv1:
+        for d in self.data['ZZ']:
             verts.append((math.ceil(d[0]), math.ceil(d[1])))
             colors.append(colormapping[d[2]])
-        print(verts)
-        print(colors)
         ax.broken_barh(
             verts,
             (10, 9),
             facecolors=colors
         )
+        verts, colors = [], []
+        for d in self.data['XX']:
+            verts.append((math.ceil(d[0]), math.ceil(d[1])))
+            colors.append(colormapping[d[2]])
         ax.broken_barh(
-            [(0.15, 1), (3.17, 2), (0.45, 2), (130, 10)],
+            verts,
             (20, 9),
-            facecolors=('tab:blue', 'tab:orange', 'tab:green', 'tab:red')
+            facecolors=colors
         )
         ax.set_ylim(5, 35)
         ax.set_xlim(0, 90)
@@ -144,31 +155,45 @@ class Dex(object):
         ax.set_yticks([15, 25])
         ax.set_yticklabels(['Observer 1', 'Observer 2'])
         ax.grid(True)
-        plt.show()'''
-        from bokeh.plotting import figure, output_file, show
-        colormap = {'VF': 'red', 'N1': 'green', 'M1': 'blue', 'AM': 'purple', 'R': 'black'}
-        observermap = {'observer1': 0.25, 'observer2': 0.2}
-        markmap = {'observer1': 'hex', 'observer2': 'triangle'}
+        plt.show()
 
-        p = figure(title = 'Some')
+    def graphBrokenBarh(self, title = 'IOA - Observer 1 vs. Observer 2', tools = 'wheel_zoom, pan, save, reset,'):
+        from bokeh.plotting import figure, output_file, show
+        from bokeh.models import Range1d
+        p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60))
         p.xaxis.axis_label = 'Timeline'
         p.yaxis.axis_label = 'Observer'
+        railmap = {'N1': 0, 'M1': 0.0015, 'R': 0.0030, 'VF': 0.0045, 'AM': 0.0060}
 
         data = {'data':[],'observer':[],'colors':[], 'marks': []}
         for k, v in self.data.items():
             for e in v:
-                data['data'].append(e[0])
-                data['observer'].append(observermap[k])
-                data['colors'].append(colormap[e[3]])
-                data['marks'].append(markmap[k])
-                p.line([e[0], e[0] + e[1]], [observermap[k], observermap[k] + 0.025], line_color=colormap[e[3]], line_width=3)
-                p.line([e[0], e[0] + e[1]], [observermap[k], observermap[k]], line_color=colormap[e[3]], line_width=3)
-            p.scatter(data['data'], data['observer'],
-         color=data['colors'], marker=data['marks'], legend_label=k, fill_alpha=0.2, size=10)
+                start, end, label = e[0], e[1], e[2]
+                diff = abs(end - start)
+                currObserver, currMarker, currColor = self.observermap[k], self.markermap[k], self.colormap[label]
+                currRail = railmap[label]
+                data['data'].append(start)
+                data['observer'].append(currObserver)
+                data['colors'].append(currColor)
+                data['marks'].append(currMarker)
+                #p.line([start, start + diff], [currObserver, currObserver + 0.015], line_color=currColor, line_width=2)
+                p.line([start, start + diff], [currObserver + currRail, currObserver + currRail], line_color=currColor, line_width=6)
+                #if (k == 'XX'): p.line([end, end], [0.45, 0.25], line_color="gray", line_width=0.8)
+                #p.line([end, end], [currObserver, currObserver - 0.010], line_color=currColor, line_width=2)
+            #p.scatter(data['data'], data['observer'], color=data['colors'], marker=data['marks'], legend_label=k, fill_alpha=0.2, size=7) # sieze 10
             data = {'data':[],'observer':[],'colors':[], 'marks': []}
 
-        p.line(0, 1, line_color="red", line_width=2)
-        p.line(0, 0, line_color="red", line_width=2)
+        p.line([0, 60], [0.34, 0.34], line_color="gray", line_width=1)
+        #p.line(0, 1, line_color="red", line_width=2)
+        #p.line(0, 0, line_color="red", line_width=2)
+        ticks = []
+        for i in range(0, 90):
+            if i % 2 == 0: ticks.append(i)
+        p.xaxis.ticker = ticks
+        p.ygrid.grid_line_dash = [6, 4]
+        p.xaxis.bounds = (0, 90)
+        p.x_range.min_interval = 6
+        #p.x_range.max_interval = 10
         show(p)
 
     def kappa(self, printRes=True):
@@ -198,7 +223,7 @@ def main():
     buffer, bLen = load(path=args.sample, rev=args.rev, limit=float(args.limit))
     if bLen == 2:
         offset = float(args.offset)
-        dex = Dex(buffer, observer=0, showAttemps=False, src=args.sample, offset=offset)
+        dex = Dex(buffer, src=args.sample, offset=offset)
         #dex.graphBrokenBarh()
     else:
         raise NotImplementedError('Only accepted two observers')

@@ -2,8 +2,17 @@ from contextlib import ExitStack
 from os import listdir
 from os.path import abspath
 
-from app.constants import VALID_LABELS
-from app.lib.validation import validate, bufferValidate
+from app.lib.validation import bufferValidate
+
+VALID_LABELS = [
+    'AM',
+    'R',
+    'M',
+    'M1',
+    'N',
+    'N1',
+    'VF'
+]
 
 def getAbsdir(path, file):
     return abspath(f'{path}/{file}')
@@ -18,15 +27,3 @@ def load(path, rev, limit, ext='txt', customValidLabels=VALID_LABELS):
         for fileBuffer in filesData:
             result.update(bufferValidate(fileBuffer, customValidLabels, limit))
     return result, len(result)
-
-def openStack(path):
-    '''
-    @deprecated
-    '''
-    result = []
-    filespath = [getAbsdir(path, x) for x in listdir(path)]
-    with ExitStack() as stack:
-        files = [stack.enter_context(open(fname)) for fname in filespath]
-        for file in files:
-            result += [validate(file)]
-    return result

@@ -30,6 +30,7 @@ class Dex(object):
         val = 0.40
         markers = ['circle', 'circle'] # ['hex', 'triangle']
         self.colormap = {'VF': 'red', 'N1': 'green', 'M1': 'blue', 'AM': 'purple', 'R': 'black'}
+        self.pcolormap = {'VF': 'firebrick', 'N1': 'darkolivegreen', 'M1': 'royalblue', 'AM': 'plum', 'R': 'darkslategray'}
         for k, v in self.files.items():
             val = val - 0.05
             self.data[k] = []
@@ -40,8 +41,8 @@ class Dex(object):
             del markers[0]
 
     def __locate(self, lsts, x1, x2, x3):
-        from bisect import bisect_left
-        #print('Start:', 'x1:', x1, 'x2:', x2, 'x3:', x3, 'diff:', abs(x2 - x1))
+        from bisect import bisect_left, bisect_right, bisect
+        print('Start:', 'x1:', x1, 'x2:', x2, 'x3:', x3, 'diff:', abs(x2 - x1))
         offset, diff = self.offset, abs(x2 - x1)
         meta1, meta2 = [lst[0] for lst in lsts], [lst[1] for lst in lsts]
         i1, i2 = None, None
@@ -52,14 +53,14 @@ class Dex(object):
         i2 = bisect_left(meta2, x2 - offset)
 
         if i1 != len(meta1):
-            #print('1 -', lsts[i1])
+            print('1 -', lsts[i1])
             if abs(lsts[i1][0] - x1) <= offset and abs(lsts[i1][1] - x2) <= offset and lsts[i1][2] == x3:
-                #print('AGREE!')
+                print('AGREE!')
                 return i1
         if i2 != len(meta2):
-            #print('2 -', lsts[i2])
+            print('2 -', lsts[i2])
             if abs(lsts[i2][0] - x1) <= offset and abs(lsts[i2][1] - x2) <= offset and lsts[i2][2] == x3:
-                #print('AGREE!')
+                print('AGREE!')
                 return i2
         '''
         i1 = bisect_left(meta1, x1 - offset)
@@ -84,7 +85,18 @@ class Dex(object):
                     return i'''
         return -1
 
+    def __checkIntegrity(self):
+        lens = [len(v) for k, v in self.agreements.items()]
+        if lens[0] != lens[1]:
+            #print(self.agreements)
+            print(lens)
+            #raise Exception('There are difference between two observers')
+        else:
+            print(lens)
+
     def __process(self):
+        import time
+        t = time.process_time()
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
         o2, v2 = data2
@@ -99,27 +111,36 @@ class Dex(object):
                 print('BAD', o2, e)'''
         self.__compare(v1, v2, o1, o2)
         self.__compare(v2, v1, o2, o1)
-        lens = [len(v) for k, v in self.agreements.items()]
-        if lens[0] != lens[1]:
-            print(self.agreements)
-            print(lens)
-        else:
-            print(lens)
+        self.__checkIntegrity()
+        elapsed_time = time.process_time() - t
+        #print(elapsed_time)
 
-    def __compare(self, v1, v2, observer1, observer2):
+    def __compare(self, v1, v2, observer1, observer2, flag=1):
         if not v1 or not v2:
             return None
         cv1, cv2 = v1.copy(), v2.copy()
-        for e in cv1:
-            self.data[observer1].append(e)
-            ix = self.__locate(cv2, e[0], e[1], e[2])
-            #print()
-            if ix > -1:
-                self.agreements[observer2].append(cv2[ix])
-                self.attemps[observer1].append(1)
-                del cv2[ix]
-            else:
-                self.attemps[observer1].append(0)
+        if flag == 0:
+            for i, event1 in enumerate(cv1):
+                start1, end1, label1 = event1[0], event1[1], event1[2]
+                self.data[observer1].append(event1 + [i])
+                for j, event2 in enumerate(cv2):
+                    start2, end2, label2 = event2[0], event2[1], event2[2]
+                    diffStart, diffEnd = abs(start1 - start2), abs(end1 - end2)
+                    if diffStart <= self.offset and diffEnd <= self.offset and label1 == label2:
+                        self.agreements[observer2].append(cv2[j] + [j])
+                        self.attemps[observer1].append(1)
+                        cv2.remove(event2)
+                        break
+        else:
+            for e in cv1:
+                ix = self.__locate(cv2, e[0], e[1], e[2])
+                self.data[observer1].append(e + [ix])
+                if ix > -1:
+                    self.agreements[observer2].append(cv2[ix] + [ix])
+                    self.attemps[observer1].append(1)
+                    del cv2[ix]
+                else:
+                    self.attemps[observer1].append(0)
 
     def __test(self, v1, v2):
         from nltk.agreement import AnnotationTask
@@ -160,15 +181,17 @@ class Dex(object):
     def graphBrokenBarh(self, title = 'IOA - Observer 1 vs. Observer 2', tools = 'wheel_zoom, pan, save, reset,'):
         from bokeh.plotting import figure, output_file, show
         from bokeh.models import Range1d
-        p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60))
+        AUDIO_MAX_LEN = 90
+        p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60), sizing_mode='stretch_both')
         p.xaxis.axis_label = 'Timeline'
         p.yaxis.axis_label = 'Observer'
-        railmap = {'N1': 0, 'M1': 0.0015, 'R': 0.0030, 'VF': 0.0045, 'AM': 0.0060}
+        railmap = {'N1': 0, 'M1': 0.0013, 'R': 0.0026, 'VF': 0.0039, 'AM': 0.0052}
+        colorm = {'XX': 'blue', 'ZZ': 'pink'}
 
         data = {'data':[],'observer':[],'colors':[], 'marks': []}
         for k, v in self.data.items():
-            for e in v:
-                start, end, label = e[0], e[1], e[2]
+            for i, e in enumerate(v):
+                start, end, label, iAgree = e[0], e[1], e[2], e[3]
                 diff = abs(end - start)
                 currObserver, currMarker, currColor = self.observermap[k], self.markermap[k], self.colormap[label]
                 currRail = railmap[label]
@@ -176,23 +199,35 @@ class Dex(object):
                 data['observer'].append(currObserver)
                 data['colors'].append(currColor)
                 data['marks'].append(currMarker)
-                #p.line([start, start + diff], [currObserver, currObserver + 0.015], line_color=currColor, line_width=2)
+                #if iAgree != -1:
+                #    currColor = self.pcolormap[label]
                 p.line([start, start + diff], [currObserver + currRail, currObserver + currRail], line_color=currColor, line_width=6)
-                #if (k == 'XX'): p.line([end, end], [0.45, 0.25], line_color="gray", line_width=0.8)
+                #p.line([start, start + diff], [currObserver, currObserver + 0.015], line_color=currColor, line_width=2)
                 #p.line([end, end], [currObserver, currObserver - 0.010], line_color=currColor, line_width=2)
-            #p.scatter(data['data'], data['observer'], color=data['colors'], marker=data['marks'], legend_label=k, fill_alpha=0.2, size=7) # sieze 10
+            p.circle([0], self.observermap[k], color=colorm[k], legend_label=k, fill_alpha=0.2, size=7) # sieze 10
             data = {'data':[],'observer':[],'colors':[], 'marks': []}
 
-        p.line([0, 60], [0.34, 0.34], line_color="gray", line_width=1)
-        #p.line(0, 1, line_color="red", line_width=2)
-        #p.line(0, 0, line_color="red", line_width=2)
-        ticks = []
-        for i in range(0, 90):
-            if i % 2 == 0: ticks.append(i)
+        for k, v in self.colormap.items():
+            p.line(0, 0, line_color=v, legend_label=k, line_width=6)
+
+        railmap = {'ZZ': 0.25, 'XX': 0.23}
+        for k, v in self.agreements.items():
+            for e in v:
+                start, end, label = e[0], e[1], e[2]
+                diff = abs(end - start)
+                p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_width=6)
+
+        p.line([0, AUDIO_MAX_LEN], [0.33, 0.33], line_color="gray", line_width=1, line_alpha=0.2)
+
+        ticks = [i for i in range(0, AUDIO_MAX_LEN + 1) if i % 2 == 0]
+        #for i in range(0, 90):
+        #    if i % 2 == 0: ticks.append(i)
+
+        p.legend.title = 'Etiquetas'
         p.xaxis.ticker = ticks
         p.ygrid.grid_line_dash = [6, 4]
         p.xaxis.bounds = (0, 90)
-        p.x_range.min_interval = 6
+        p.x_range.min_interval = 7
         #p.x_range.max_interval = 10
         show(p)
 

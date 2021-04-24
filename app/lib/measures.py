@@ -75,7 +75,7 @@ class Dex(object):
         elapsed_time = process_time() - t
         print(elapsed_time)
 
-    def __compare(self, v1, v2, observer1, observer2, flag=1):
+    def __compare(self, v1, v2, observer1, observer2, flag=0):
         if not v1 or not v2:
             return None
         cv1, cv2 = v1.copy(), v2.copy()
@@ -88,7 +88,7 @@ class Dex(object):
                     diffStart, diffEnd = abs(start1 - start2), abs(end1 - end2)
                     if diffStart <= self.offset and diffEnd <= self.offset and label1 == label2:
                         self.agreements[observer2].append(cv2[j] + [j])
-                        self.attemps[observer1].append(1)
+                        self.attemps[observer1].append(j)
                         cv2.remove(event2)
                         break
         else:
@@ -109,44 +109,95 @@ class Dex(object):
 
     def graphBrokenBarh(self, title = 'IOA - Observer 1 vs. Observer 2', tools = 'wheel_zoom, pan, save, reset,'):
         from bokeh.plotting import figure, output_file, show
-        from bokeh.models import Range1d
+        from bokeh.palettes import Spectral6
+        from bokeh.models import BoxAnnotation, ColumnDataSource, Range1d, HoverTool
+        from bokeh.transform import factor_cmap
         p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60), sizing_mode='stretch_both')
         p.xaxis.axis_label = 'Timeline'
         p.yaxis.axis_label = 'Observer'
         railmap = {'N': 0, 'M': 0.0013, 'R': 0.0026, 'VF': 0.0039, 'AM': 0.0052}
         colorm = {'XX': 'blue', 'ZZ': 'pink'}
 
-        data = {'data':[],'observer':[],'colors':[], 'marks': []}
         for k, v in self.data.items():
             for i, e in enumerate(v):
                 start, end, label, iAgree = e[0], e[1], e[2], e[3]
                 diff = abs(end - start)
-                currObserver, currColor = self.observermap[k], self.colormap[label]
-                currRail = railmap[label]
-                data['data'].append(start)
-                data['observer'].append(currObserver)
-                data['colors'].append(currColor)
-                #if iAgree != -1:
-                #    currColor = self.pcolormap[label]
-                p.line([start, start + diff], [currObserver + currRail, currObserver + currRail], line_color=currColor, line_width=6)
-            p.circle([0], self.observermap[k], color=colorm[k], legend_label=k, fill_alpha=0.2, size=7)
-            data = {'data':[],'observer':[],'colors':[], 'marks': []}
+                observer, color = self.observermap[k], self.colormap[label]
+                rail = railmap[label]
+                data = {'x': [start, start + diff], 'y': [observer + rail, observer + rail], 'start': [start, start], 'end': [end, end], 'label': [label, label]}
+                source = ColumnDataSource(data=data)
+                p.line(x='x', y='y', name=label, line_color=color, line_width=6, source=source)
+            #p.circle([0], self.observermap[k], color=colorm[k], legend_label=k, fill_alpha=0.2, size=7)
 
         for k, v in self.colormap.items():
             p.line(0, 0, line_color=v, legend_label=k, line_width=6)
 
-        railmap = {'ZZ': 0.25, 'XX': 0.23}
+        '''data = {'x': [], 'y': [], 'line_color': [], 'label': [], 'start': []}
+        for k, v in self.data.items():
+            for i, e in enumerate(v):
+                start, end, label = e[0], e[1], e[2]
+                if label != 'R':
+                    continue
+                diff = abs(end - start)
+                observer, color, rail = self.observermap[k], self.colormap[label], railmap[label]
+                data['x'].append(start)
+                data['x'].append(start + diff)
+                data['y'].append(observer + rail)
+                data['y'].append(observer + rail)
+                data['line_color'].append(color)
+                data['line_color'].append(color)
+                data['label'].append(label)
+                data['label'].append(label)
+                data['start'].append(start)
+                data['start'].append(start)
+                p.line(x='x', y='y', line_color='black', line_width=6, legend_group='label', source=data)
+                data = {'x': [], 'y': [], 'line_color': [], 'label': [], 'start': []}
+            break'''
+
+        railmap = {'ZZ': 0.25, 'XX': 0.23, '--': 0.21}
         for k, v in self.agreements.items():
             for e in v:
                 start, end, label = e[0], e[1], e[2]
                 diff = abs(end - start)
                 p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_width=6)
+                #p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='green'))
+
+        result = []
+        r = []
+        lastStart, lastEnd = 0, 0
+        partialStart = 0
+        z1, z2 = 0, 0
+        for i, (v1, v2) in enumerate(zip(*self.agreements.values())):
+            start1, end1, label1 = v1[0], v1[1], v1[2]
+            start2, end2, label2 = v2[0], v2[1], v2[2]
+            newStart, newEnd = start2 if start1 > start2 else start1, end2 if end1 < end2 else end1
+            #print([newStart, newEnd], [partialStart, lastStart], '-', lastStart - newStart)
+            if i == 0:
+                result.append((newStart, newEnd))
+            if lastStart - newStart < 0:
+                result.append((partialStart, lastStart))
+                r.append((z1, z2))
+                z1, z2 = newStart, newEnd
+            else:
+                z2 = newEnd
+            partialStart = newStart
+            lastStart = newEnd
+        else:
+            r.append((z1, z2))
+
+        for e in r:
+            start, end = e
+            p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='green'))
+            p.line([start, start + abs(end - start)], [0.21, 0.21], line_color='green', line_alpha=0.8, line_width=6)
 
         p.line([0, self.limit], [0.33, 0.33], line_color="gray", line_width=1, line_alpha=0.2)
 
         ticks = [i for i in range(0, int(self.limit) + 1) if i % 2 == 0]
+        node_hover_tool = HoverTool(names=['VF', 'R', 'N', 'M', 'AM'], tooltips=[('label', '@label'), ('start', '@start'), ('end', '@end')])
 
+        p.add_tools(node_hover_tool)
         p.legend.title = 'Etiquetas'
+        #p.legend.click_policy = 'hide'
         p.xaxis.ticker = ticks
         p.ygrid.grid_line_dash = [6, 4]
         p.xaxis.bounds = (0, 90)

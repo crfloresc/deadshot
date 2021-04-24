@@ -87,7 +87,7 @@ class Dex(object):
                     start2, end2, label2 = event2[0], event2[1], event2[2]
                     diffStart, diffEnd = abs(start1 - start2), abs(end1 - end2)
                     if diffStart <= self.offset and diffEnd <= self.offset and label1 == label2:
-                        self.agreements[observer2].append(cv2[j] + [j])
+                        self.agreements[observer2].append(tuple(cv2[j]))
                         self.attemps[observer1].append(j)
                         cv2.remove(event2)
                         break
@@ -96,7 +96,7 @@ class Dex(object):
                 ix = self.__locate(cv2, e[0], e[1], e[2])
                 self.data[observer1].append(e + [ix])
                 if ix > -1:
-                    self.agreements[observer2].append(cv2[ix] + [ix])
+                    self.agreements[observer2].append(tuple(cv2[ix]))
                     self.attemps[observer1].append(1)
                     del cv2[ix]
                 else:
@@ -110,7 +110,7 @@ class Dex(object):
     def graphBrokenBarh(self, title = 'IOA - Observer 1 vs. Observer 2', tools = 'wheel_zoom, pan, save, reset,'):
         from bokeh.plotting import figure, output_file, show
         from bokeh.palettes import Spectral6
-        from bokeh.models import BoxAnnotation, ColumnDataSource, Range1d, HoverTool
+        from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
         from bokeh.transform import factor_cmap
         p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60), sizing_mode='stretch_both')
         p.xaxis.axis_label = 'Timeline'
@@ -118,16 +118,20 @@ class Dex(object):
         railmap = {'N': 0, 'M': 0.0013, 'R': 0.0026, 'VF': 0.0039, 'AM': 0.0052}
         colorm = {'XX': 'blue', 'ZZ': 'pink'}
 
-        for k, v in self.data.items():
-            for i, e in enumerate(v):
+        for i, (k, v) in enumerate(self.data.items()):
+            for j, e in enumerate(v):
                 start, end, label, iAgree = e[0], e[1], e[2], e[3]
                 diff = abs(end - start)
                 observer, color = self.observermap[k], self.colormap[label]
                 rail = railmap[label]
-                data = {'x': [start, start + diff], 'y': [observer + rail, observer + rail], 'start': [start, start], 'end': [end, end], 'label': [label, label]}
+                #data = {'x': [start, start + diff], 'y': [observer + rail, observer + rail], 'start': [start, start], 'end': [end, end], 'label': [label, label]}
+                data = {'x': [start], 'y': [observer + rail], 'start': [start], 'end': [end], 'label': [label]}
                 source = ColumnDataSource(data=data)
-                p.line(x='x', y='y', name=label, line_color=color, line_width=6, source=source)
-            #p.circle([0], self.observermap[k], color=colorm[k], legend_label=k, fill_alpha=0.2, size=7)
+                if j == 0:
+                    observerLabel = Label(x=start, y=observer, text=k, x_offset=-30, render_mode='canvas')
+                    p.add_layout(observerLabel)
+                #p.line(x='x', y='y', name=label, line_color=color, line_width=6, source=source)
+                p.hbar(y='y', height=0.007, left='start', right='end', name=label, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7, source=source)
 
         for k, v in self.colormap.items():
             p.line(0, 0, line_color=v, legend_label=k, line_width=6)
@@ -157,40 +161,72 @@ class Dex(object):
         railmap = {'ZZ': 0.25, 'XX': 0.23, '--': 0.21}
         for k, v in self.agreements.items():
             for e in v:
-                start, end, label = e[0], e[1], e[2]
+                start, end, label = e
                 diff = abs(end - start)
-                p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_width=6)
-                #p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='green'))
+                p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_alpha=0.8, line_width=6)
 
-        result = []
-        r = []
+        agreement = []
+        noAgreement = []
+        result = {'agreement': [], 'noAgreement': []}
         lastStart, lastEnd = 0, 0
         partialStart = 0
         z1, z2 = 0, 0
         for i, (v1, v2) in enumerate(zip(*self.agreements.values())):
-            start1, end1, label1 = v1[0], v1[1], v1[2]
-            start2, end2, label2 = v2[0], v2[1], v2[2]
+            start1, end1, label1 = v1
+            start2, end2, label2 = v2
             newStart, newEnd = start2 if start1 > start2 else start1, end2 if end1 < end2 else end1
-            #print([newStart, newEnd], [partialStart, lastStart], '-', lastStart - newStart)
-            if i == 0:
-                result.append((newStart, newEnd))
+            #print([newStart, newEnd], [partialStart, lastStart], '-', [z1, z2], lastStart - newStart)
             if lastStart - newStart < 0:
-                result.append((partialStart, lastStart))
-                r.append((z1, z2))
+                agreement.append((z1, z2))
+                noAgreement.append((z2, newStart))
+                result['agreement'].append((z1, z2))
+                result['noAgreement'].append((z2, newStart))
                 z1, z2 = newStart, newEnd
             else:
                 z2 = newEnd
             partialStart = newStart
             lastStart = newEnd
         else:
-            r.append((z1, z2))
+            agreement.append((z1, z2))
+            noAgreement.append((z2, self.limit))
+            result['agreement'].append((z1, z2))
+            result['noAgreement'].append((z2, self.limit))
 
-        for e in r:
+        # draw agreement bar and annotation
+        agreementcolormap = {'agreement': 'green', 'noAgreement': 'red'}
+        agreementrailmap = {'agreement': 0.21, 'noAgreement': 0.19}
+        for k, v in result.items():
+            for e in v:
+                start, end = e
+                y, color = agreementrailmap[k], agreementcolormap[k]
+                if k == 'noAgreement':
+                    p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color=color))
+                #p.line([start, start + abs(end - start)], [y, y], line_color=color, line_alpha=0.8, line_width=6)
+                p.hbar(y=y, height=0.007, left=start, right=end, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7)
+
+        # draw agreement bar and annotation
+        '''for e in agreement:
             start, end = e
             p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='green'))
             p.line([start, start + abs(end - start)], [0.21, 0.21], line_color='green', line_alpha=0.8, line_width=6)
 
-        p.line([0, self.limit], [0.33, 0.33], line_color="gray", line_width=1, line_alpha=0.2)
+        # draw no agreement bar and annotation
+        for e in noAgreement:
+            start, end = e
+            p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='red'))
+            p.line([start, start + abs(end - start)], [0.19, 0.19], line_color='red', line_alpha=0.8, line_width=6)
+        '''
+
+        # add observers names
+        citation = Label(x=70, y=500, x_units='screen', y_units='screen',
+                 text=self.__kappa(0.87), render_mode='css',
+                 border_line_color='black', border_line_alpha=1.0,
+                 background_fill_color='white', background_fill_alpha=1.0)
+        p.add_layout(citation)
+
+        # Notation
+        p.line([0, self.limit], [0.33, 0.33], line_color='gray', line_width=1, line_alpha=0.2)
+        p.line([0, self.limit], [0.28, 0.28], line_color='gray', line_width=1, line_alpha=0.2)
 
         ticks = [i for i in range(0, int(self.limit) + 1) if i % 2 == 0]
         node_hover_tool = HoverTool(names=['VF', 'R', 'N', 'M', 'AM'], tooltips=[('label', '@label'), ('start', '@start'), ('end', '@end')])
@@ -204,15 +240,13 @@ class Dex(object):
         p.x_range.min_interval = 7
         show(p)
 
-    def kappa(self, printRes=True):
-        kappa = self.ratingtask.kappa()
-        if printRes:
-            print('Cohen\'s Kappa: {}%'.format(round(kappa * 100, 4)))
-        return kappa
+    def __kappa(self, kappa):
+        #kappa = self.ratingtask.kappa()
+        return 'Cohen\'s Kappa: {}%'.format(round(kappa * 100, 4))
 
     def saveMetrics(self):
         filename = '{0}/output/metrics.txt'.format(self.src)
         with open(filename, 'a') as out:
             out.write('Observer {0}\n'.format(self.observer + 1))
             out.write('{0}, attemps: {1}\n'.format(self.oName, self.attemps))
-            out.write('Cohen\'s Kappa: {0}%\n'.format(round(self.kappa(printRes=False) * 100, 4)))
+            #out.write('Cohen\'s Kappa: {0}%\n'.format(round(self.kappa(printRes=False) * 100, 4)))

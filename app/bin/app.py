@@ -13,9 +13,9 @@ def main():
     args = getArgs()
     limit, offset = float(args.limit), float(args.offset)
 
-    buffer, bLen = load(path=args.sample, rev=args.rev, limit=limit)
+    buffer, bLen, sample = load(path=args.sample, rev=args.rev, limit=limit)
     if bLen == 2:
-        dex = Dex(buffer, src=args.sample, offset=offset, limit=limit)
+        dex = Dex(sample, buffer, src=args.sample, offset=offset, limit=limit)
         dex.graphBrokenBarh()
     else:
         raise NotImplementedError('Only accepted two observers')

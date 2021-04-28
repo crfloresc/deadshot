@@ -1,6 +1,13 @@
+from bisect import bisect_left
+from bokeh.plotting import figure, output_file, show
+from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
+#from nltk.agreement import AnnotationTask
+from time import process_time
+
 class Dex(object):
-    def __init__(self, buffer, src=None, offset=0.150, limit=60.00, debug=False):
-        self.files = buffer
+    def __init__(self, sample, dataset, src=None, offset=0.150, limit=60.00, debug=False):
+        self.sample = sample
+        self.files = dataset
         self.src = src
         self.offset = offset
         self.limit = limit
@@ -8,10 +15,12 @@ class Dex(object):
         # For processing
         self.data = {}
         self.agreements = {}
+        self.tempAgreements = {}
         self.attemps = {}
         # For chart
         self.colormap = {}
         self.observermap = {}
+        self.railmap = {}
         # For agree
         self.ratingtask = None
 
@@ -21,16 +30,16 @@ class Dex(object):
     def __setupDicts(self):
         val = 0.40
         self.colormap = {'VF': 'red', 'N': 'green', 'M': 'blue', 'AM': 'purple', 'R': 'black'}
-        self.pcolormap = {'VF': 'firebrick', 'N': 'darkolivegreen', 'M': 'royalblue', 'AM': 'plum', 'R': 'darkslategray'}
+        self.railmap = {'N': 0, 'M': 0.0013, 'R': 0.0026, 'VF': 0.0039, 'AM': 0.0052}
         for k, v in self.files.items():
             val = val - 0.05
             self.data[k] = []
             self.agreements[k] = []
+            self.tempAgreements[k] = []
             self.attemps[k] = []
             self.observermap[k] = val
 
     def __locate(self, lsts, x1, x2, x3):
-        from bisect import bisect_left
         #print('Start:', 'x1:', x1, 'x2:', x2, 'x3:', x3, 'diff:', abs(x2 - x1))
         offset, diff = self.offset, abs(x2 - x1)
         meta1, meta2 = [lst[0] for lst in lsts], [lst[1] for lst in lsts]
@@ -63,7 +72,6 @@ class Dex(object):
             print(lens)
 
     def __process(self):
-        from time import process_time
         t = process_time()
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
@@ -75,126 +83,101 @@ class Dex(object):
         elapsed_time = process_time() - t
         print(elapsed_time)
 
-    def __compare(self, v1, v2, observer1, observer2, flag=0):
+    def __compare(self, v1, v2, observer1, observer2, featureFlag=0):
         if not v1 or not v2:
-            return None
+            raise Exception('v1 or v2 not present')
         cv1, cv2 = v1.copy(), v2.copy()
-        if flag == 0:
+        if featureFlag == 0:
+            #self.data[observer1] = [tuple(_) for _ in cv1]
+            #self.agreements[observer2] = [tuple(_) for e in cv1 for _ in cv2 if (abs(e[0] - _[0]) <= self.offset) and (abs(e[1] - _[1]) <= self.offset) and (e[2] == _[2])]
+            #'''
+            res = []
             for i, event1 in enumerate(cv1):
-                start1, end1, label1 = event1[0], event1[1], event1[2]
-                self.data[observer1].append(event1 + [i])
+                start1, end1, label1 = tuple(event1)
+                self.data[observer1].append(tuple(event1))
+                #res = res + [tuple(_) for _ in cv2 if (abs(start1 - _[0]) <= self.offset) and (abs(end1 - _[1]) <= self.offset) and (label1 == _[2])]
                 for j, event2 in enumerate(cv2):
-                    start2, end2, label2 = event2[0], event2[1], event2[2]
+                    start2, end2, label2 = tuple(event2)
                     diffStart, diffEnd = abs(start1 - start2), abs(end1 - end2)
                     if diffStart <= self.offset and diffEnd <= self.offset and label1 == label2:
                         self.agreements[observer2].append(tuple(cv2[j]))
+                        self.tempAgreements[observer2].append(tuple(cv2[j]))
                         self.attemps[observer1].append(j)
                         cv2.remove(event2)
                         break
+            #self.agreements[observer2] = res
+            #'''
         else:
             for e in cv1:
                 ix = self.__locate(cv2, e[0], e[1], e[2])
-                self.data[observer1].append(e + [ix])
+                self.data[observer1].append(tuple(e))
                 if ix > -1:
                     self.agreements[observer2].append(tuple(cv2[ix]))
+                    self.tempAgreements[observer2].append(tuple(cv2[j]))
                     self.attemps[observer1].append(1)
                     del cv2[ix]
                 else:
                     self.attemps[observer1].append(0)
 
-    def __test(self, v1, v2):
-        from nltk.agreement import AnnotationTask
+    def __ratingtask(self, v1, v2):
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
         self.ratingtask = AnnotationTask(data=formatted)
 
-    def graphBrokenBarh(self, title = 'IOA - Observer 1 vs. Observer 2', tools = 'wheel_zoom, pan, save, reset,'):
-        from bokeh.plotting import figure, output_file, show
-        from bokeh.palettes import Spectral6
-        from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
-        from bokeh.transform import factor_cmap
+    def graphBrokenBarh(self, title=None, tools=None):
+        if not title:
+            title = 'IOA of {} - Observer 1 vs. Observer 2'.format(self.sample)
+        if not tools:
+            tools = 'wheel_zoom, pan, save, reset,'
         p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60), sizing_mode='stretch_both')
-        p.xaxis.axis_label = 'Timeline'
-        p.yaxis.axis_label = 'Observer'
-        railmap = {'N': 0, 'M': 0.0013, 'R': 0.0026, 'VF': 0.0039, 'AM': 0.0052}
-        colorm = {'XX': 'blue', 'ZZ': 'pink'}
 
+        # Draw all events
         for i, (k, v) in enumerate(self.data.items()):
             for j, e in enumerate(v):
-                start, end, label, iAgree = e[0], e[1], e[2], e[3]
+                start, end, label = e
                 diff = abs(end - start)
-                observer, color = self.observermap[k], self.colormap[label]
-                rail = railmap[label]
+                observer, color, rail = self.observermap[k], self.colormap[label], self.railmap[label]
                 #data = {'x': [start, start + diff], 'y': [observer + rail, observer + rail], 'start': [start, start], 'end': [end, end], 'label': [label, label]}
                 data = {'x': [start], 'y': [observer + rail], 'start': [start], 'end': [end], 'label': [label]}
                 source = ColumnDataSource(data=data)
-                if j == 0:
+                if j == 0: # only for draw observer label
                     observerLabel = Label(x=start, y=observer, text=k, x_offset=-30, render_mode='canvas')
                     p.add_layout(observerLabel)
                 #p.line(x='x', y='y', name=label, line_color=color, line_width=6, source=source)
                 p.hbar(y='y', height=0.007, left='start', right='end', name=label, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7, source=source)
 
+        # Only for draw legend colors
         for k, v in self.colormap.items():
             p.line(0, 0, line_color=v, legend_label=k, line_width=6)
 
-        '''data = {'x': [], 'y': [], 'line_color': [], 'label': [], 'start': []}
-        for k, v in self.data.items():
-            for i, e in enumerate(v):
-                start, end, label = e[0], e[1], e[2]
-                if label != 'R':
-                    continue
-                diff = abs(end - start)
-                observer, color, rail = self.observermap[k], self.colormap[label], railmap[label]
-                data['x'].append(start)
-                data['x'].append(start + diff)
-                data['y'].append(observer + rail)
-                data['y'].append(observer + rail)
-                data['line_color'].append(color)
-                data['line_color'].append(color)
-                data['label'].append(label)
-                data['label'].append(label)
-                data['start'].append(start)
-                data['start'].append(start)
-                p.line(x='x', y='y', line_color='black', line_width=6, legend_group='label', source=data)
-                data = {'x': [], 'y': [], 'line_color': [], 'label': [], 'start': []}
-            break'''
-
-        railmap = {'ZZ': 0.25, 'XX': 0.23, '--': 0.21}
-        for k, v in self.agreements.items():
-            for e in v:
-                start, end, label = e
-                diff = abs(end - start)
-                p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_alpha=0.8, line_width=6)
-
-        agreement = []
-        noAgreement = []
         result = {'agreement': [], 'noAgreement': []}
         lastStart, lastEnd = 0, 0
-        partialStart = 0
         z1, z2 = 0, 0
         for i, (v1, v2) in enumerate(zip(*self.agreements.values())):
             start1, end1, label1 = v1
             start2, end2, label2 = v2
             newStart, newEnd = start2 if start1 > start2 else start1, end2 if end1 < end2 else end1
-            #print([newStart, newEnd], [partialStart, lastStart], '-', [z1, z2], lastStart - newStart)
             if lastStart - newStart < 0:
-                agreement.append((z1, z2))
-                noAgreement.append((z2, newStart))
                 result['agreement'].append((z1, z2))
                 result['noAgreement'].append((z2, newStart))
                 z1, z2 = newStart, newEnd
             else:
                 z2 = newEnd
-            partialStart = newStart
             lastStart = newEnd
         else:
-            agreement.append((z1, z2))
-            noAgreement.append((z2, self.limit))
             result['agreement'].append((z1, z2))
             result['noAgreement'].append((z2, self.limit))
 
+        # draw temp agreement bars
+        '''railmap = {'ZZ': 0.21, 'XX': 0.19}
+        for k, v in self.agreements.items():
+            for e in v:
+                start, end, label = e
+                diff = abs(end - start)
+                p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_alpha=0.8, line_width=6)'''
+
         # draw agreement bar and annotation
         agreementcolormap = {'agreement': 'green', 'noAgreement': 'red'}
-        agreementrailmap = {'agreement': 0.21, 'noAgreement': 0.19}
+        agreementrailmap = {'agreement': 0.25, 'noAgreement': 0.23}
         for k, v in result.items():
             for e in v:
                 start, end = e
@@ -203,19 +186,6 @@ class Dex(object):
                     p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color=color))
                 #p.line([start, start + abs(end - start)], [y, y], line_color=color, line_alpha=0.8, line_width=6)
                 p.hbar(y=y, height=0.007, left=start, right=end, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7)
-
-        # draw agreement bar and annotation
-        '''for e in agreement:
-            start, end = e
-            p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='green'))
-            p.line([start, start + abs(end - start)], [0.21, 0.21], line_color='green', line_alpha=0.8, line_width=6)
-
-        # draw no agreement bar and annotation
-        for e in noAgreement:
-            start, end = e
-            p.add_layout(BoxAnnotation(left=start, right=end, fill_alpha=0.1, fill_color='red'))
-            p.line([start, start + abs(end - start)], [0.19, 0.19], line_color='red', line_alpha=0.8, line_width=6)
-        '''
 
         # add observers names
         citation = Label(x=70, y=500, x_units='screen', y_units='screen',
@@ -233,6 +203,8 @@ class Dex(object):
 
         p.add_tools(node_hover_tool)
         p.legend.title = 'Etiquetas'
+        p.xaxis.axis_label = 'Timeline'
+        p.yaxis.axis_label = 'Observer'
         #p.legend.click_policy = 'hide'
         p.xaxis.ticker = ticks
         p.ygrid.grid_line_dash = [6, 4]

@@ -19,5 +19,5 @@ def bufferValidate(buffer, customValidLabels, limit):
             if start >= limit:
                 continue
             end = float(lineFormated[1].replace(',','.'))
-            temp.append([start, end, label])
+            temp.append((start, end, label))
     return dict({currOwner: temp})

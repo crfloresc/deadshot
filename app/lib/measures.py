@@ -1,7 +1,7 @@
 from bisect import bisect_left
 from bokeh.plotting import figure, output_file, show
 from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
-#from nltk.agreement import AnnotationTask
+#from nltk import agreement
 from time import process_time
 
 class Dex(object):
@@ -77,13 +77,16 @@ class Dex(object):
         o1, v1 = data1
         o2, v2 = data2
 
-        self.__compare(v1, v2, o1, o2)
-        self.__compare(v2, v1, o2, o1)
+        self.__compare(v1, v2, o1, o2, 1)
+        self.__compare(v2, v1, o2, o1, 2)
         self.__checkIntegrity()
         elapsed_time = process_time() - t
         print(elapsed_time)
+        #data = self.attemps[o1] + self.attemps[o2]
+        #self.__ratingtask(data)
+        #print(self.__kappa())
 
-    def __compare(self, v1, v2, observer1, observer2, featureFlag=0):
+    def __compare(self, v1, v2, observer1, observer2, num, featureFlag=0):
         if not v1 or not v2:
             raise Exception('v1 or v2 not present')
         cv1, cv2 = v1.copy(), v2.copy()
@@ -91,37 +94,38 @@ class Dex(object):
             #self.data[observer1] = [tuple(_) for _ in cv1]
             #self.agreements[observer2] = [tuple(_) for e in cv1 for _ in cv2 if (abs(e[0] - _[0]) <= self.offset) and (abs(e[1] - _[1]) <= self.offset) and (e[2] == _[2])]
             #'''
-            res = []
+            #k = 0
             for i, event1 in enumerate(cv1):
-                start1, end1, label1 = tuple(event1)
-                self.data[observer1].append(tuple(event1))
+                start1, end1, label1 = event1
+                self.data[observer1].append(event1)
                 #res = res + [tuple(_) for _ in cv2 if (abs(start1 - _[0]) <= self.offset) and (abs(end1 - _[1]) <= self.offset) and (label1 == _[2])]
                 for j, event2 in enumerate(cv2):
-                    start2, end2, label2 = tuple(event2)
+                    start2, end2, label2 = event2
                     diffStart, diffEnd = abs(start1 - start2), abs(end1 - end2)
                     if diffStart <= self.offset and diffEnd <= self.offset and label1 == label2:
-                        self.agreements[observer2].append(tuple(cv2[j]))
-                        self.tempAgreements[observer2].append(tuple(cv2[j]))
-                        self.attemps[observer1].append(j)
+                        self.agreements[observer2].append(cv2[j])
+                        self.tempAgreements[observer2].append(cv2[j])
+                        #self.attemps[observer1].append([num, k, round(start1)])
                         cv2.remove(event2)
+                        #k = k + 1
                         break
             #self.agreements[observer2] = res
             #'''
         else:
             for e in cv1:
                 ix = self.__locate(cv2, e[0], e[1], e[2])
-                self.data[observer1].append(tuple(e))
+                self.data[observer1].append(e)
                 if ix > -1:
-                    self.agreements[observer2].append(tuple(cv2[ix]))
-                    self.tempAgreements[observer2].append(tuple(cv2[j]))
+                    self.agreements[observer2].append(cv2[ix])
+                    self.tempAgreements[observer2].append(cv2[j])
                     self.attemps[observer1].append(1)
                     del cv2[ix]
                 else:
                     self.attemps[observer1].append(0)
 
-    def __ratingtask(self, v1, v2):
-        formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
-        self.ratingtask = AnnotationTask(data=formatted)
+    def __ratingtask(self, data):
+        #formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
+        self.ratingtask = agreement.AnnotationTask(data=data)
 
     def graphBrokenBarh(self, title=None, tools=None):
         if not title:
@@ -177,7 +181,7 @@ class Dex(object):
 
         # draw agreement bar and annotation
         agreementcolormap = {'agreement': 'green', 'noAgreement': 'red'}
-        agreementrailmap = {'agreement': 0.25, 'noAgreement': 0.23}
+        agreementrailmap = {'agreement': 0.25, 'noAgreement': 0.24}
         for k, v in result.items():
             for e in v:
                 start, end = e
@@ -188,11 +192,11 @@ class Dex(object):
                 p.hbar(y=y, height=0.007, left=start, right=end, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7)
 
         # add observers names
-        citation = Label(x=70, y=500, x_units='screen', y_units='screen',
+        '''citation = Label(x=70, y=500, x_units='screen', y_units='screen',
                  text=self.__kappa(0.87), render_mode='css',
                  border_line_color='black', border_line_alpha=1.0,
                  background_fill_color='white', background_fill_alpha=1.0)
-        p.add_layout(citation)
+        p.add_layout(citation)'''
 
         # Notation
         p.line([0, self.limit], [0.33, 0.33], line_color='gray', line_width=1, line_alpha=0.2)
@@ -212,8 +216,10 @@ class Dex(object):
         p.x_range.min_interval = 7
         show(p)
 
-    def __kappa(self, kappa):
-        #kappa = self.ratingtask.kappa()
+    def __kappa(self):
+        if not self.ratingtask:
+            return None
+        kappa = self.ratingtask.kappa()
         return 'Cohen\'s Kappa: {}%'.format(round(kappa * 100, 4))
 
     def saveMetrics(self):

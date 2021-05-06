@@ -19,7 +19,7 @@ def getAbsdir(path, file):
 
 def load(path, rev, limit, ext='txt', customValidLabels=VALID_LABELS):
     result = dict()
-    filespath = [getAbsdir(path, x) for x in listdir(path) if x.split('.')[-1] == ext and rev in x.split('.')]
+    filespath = sorted([getAbsdir(path, x) for x in listdir(path) if x.split('.')[-1] == ext and rev in x.split('.')])
     sample = basename(normpath(abspath(path)))
     if not filespath:
         raise Exception('No files found')

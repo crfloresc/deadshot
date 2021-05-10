@@ -3,6 +3,7 @@ from app.lib import Dex, load
 
 def getArgs():
     parser = ArgumentParser(prog='deadshot', description='Arguments being passed to the program')
+    parser.add_argument('--audio', '-a', required=False, default='./', help='Audio file path')
     parser.add_argument('--limit', '-aL', required=False, default=60, help='Audio lenght')
     parser.add_argument('--sample', '-sp', required=True, default='./sample', help='Sample path')
     parser.add_argument('--rev', '-r', required=True, help='Revision of file')

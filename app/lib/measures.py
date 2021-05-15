@@ -1,7 +1,7 @@
 from bisect import bisect_left
 from bokeh.plotting import figure, output_file, show
 from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
-#from nltk import agreement
+from nltk import agreement
 from time import process_time
 
 class Dex(object):
@@ -69,32 +69,218 @@ class Dex(object):
         #'''
 
     def __test(self, v):
-        #ts, te = 0 * 100, 0.124560 * 100
-        #cv = v.copy()
-        cv = [(0, 0.124560, 'R'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N')]
-        limit = 1
-        d = 441
-        res = []
-        ie = None
+        from math import floor, ceil
+        cv = v.copy()
+        #cv = [(0, 0.124560, 'R'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N')]
+        limit = 120
+        d = 100 # 441
+        last = None
+        reset = False
         track = [_ for _ in range(0, int(limit) * d)]
-        for i in range(0, int(limit) * d):
-            #if ie:
-            #    del cv[ie]
-            #    ie = None
-            for j, (ts, te, label) in enumerate(cv):
-                #if not ie:
-                #    ie = j
-                ds = i - ts * d
-                de = i - te * d
-                if ds >= 0 and de <= 0:
-                    res.append(label)
-                    track[i] = label
+        while cv:
+            reset = False
+            for i in range(0, int(limit) * d):
+                if reset:
                     break
+                if last:
+                    ts, te, label = last
+                    sts, ste = floor(ts * d), floor(te * d)
+                    #print(i, sts, ste, label)
+                    if i >= sts and i <= ste:
+                        if track[i] != i:
+                            track[i] = track[i] + label
+                        else:
+                            track[i] = label
+                        if i == ste or i == ceil(te * d) or i == round(te * d):
+                            last = None
+                            reset = True
+                            del cv[0]
+                    if i >= ste:
+                        break
+                else:
+                    for j, (ts, te, label) in enumerate(cv):
+                        ds = i - ts * d
+                        de = i - te * d
+                        if i < te * d and ds >= 0 and de <= 0:
+                            #if i != round(ts * d) and i > round(ts * d) and i < round(te * d):
+                            #    print(ts * d, te * d, label, track[round(ts * d)])
+                            if track[round(ts * d)] != label and i > 0:
+                                #print(ts, te, label, '-', ts * d, te * d, '-', track[round(ts * d)], i)
+                                reset = True
+                                last = (ts, te, label)
+                                break
+                            if track[i] != i:
+                                track[i] = track[i] + label
+                            else:
+                                track[i] = label
+                            if i == floor(te * d) or i == ceil(te * d) or i == round(te * d):
+                                del cv[j]
+                            break
+            limit = limit + 1
+        print('len track', len(track))
+        return track
+    def __test2(self, v):
+        from decimal import *
+        getcontext().prec = 5
+        getcontext().rounding = ROUND_HALF_UP
+        pv = [(0, 0.144560, 'RVF'), (0.201564, 0.856712, 'N')] # procesed vector
+        L = 1 # actually 90 seg
+        MS = 1000 # constant
+        d = 10 # framing in ms
+        td = MS / d
+        defaultLabel = 'R'
+        track = [defaultLabel for _ in range(0, L * int(td))]
+        for i, (st, et, label) in enumerate(pv):
+            tst, tet = int(Decimal(st * td).to_integral_value()), int(Decimal(et * td).to_integral_value())
+            #print(st*td, et*td)
+            #print('[DEBUG]', tst, tet)
+            for j in range(tst, tet):
+                track[j] = label
         print(track)
-        print(len(track))
-        print(len(res))
+    def __test3(self):
+        v = [(0, 0.101870, 'R'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N'), (0.856712, 0.900000, 'M')] # vector
+        result = []
+        temp = []
+        indexes = []
 
-    def __process(self):
+        for i, e in enumerate(v):
+            st, et, label = e
+            if i > 0:
+                rst, ret, rlabel = result[i - 1]
+                if st < ret:
+                    if st >= rst:
+                        temp.append(st)
+                    if et >= ret:
+                        temp.append(et)
+                    temp.append(rlabel + label)
+            if temp:
+                result.append(tuple(temp))
+                indexes.append(i - 1)
+                temp = []
+            else:
+                result.append(e)
+
+        for i, j in enumerate(indexes):
+            del result[j - i]
+
+        print(result)
+    def __test4(self):
+        v = [(0, 2, 'R'), (0.5, 1.5, 'VF'), (0.75, 1.75, 'M')]
+        cv = v
+        ccv = []
+        result = []
+        debug = True
+
+        lastCopy = None
+        toAdd = []
+        for i, (parentSt, parentEt, parentLab) in enumerate(cv):
+            if i > 0:
+                for j, (childSt, childEt, childLab) in enumerate(lastCopy):
+                    overlap = max(0, min(parentEt, childEt) - max(parentSt, childSt))
+                    print('[DEBUG]', (parentSt, parentEt, parentLab), overlap, (childSt, childEt, childLab))
+                    if overlap > 0 and parentSt != childSt and parentEt != childEt and parentLab != childLab:
+                        val1st = min(childSt, parentSt)
+                        val1et = max(childSt, parentSt)
+                        val1Label = childLab if parentSt > childSt else parentLab
+                        val2st = max(childSt, parentSt)
+                        val2et = min(childEt, parentEt)
+                        val2Label = childLab + parentLab
+                        val3st = min(parentEt, childEt)
+                        val3et = max(parentEt, childEt)
+                        val3Label = parentLab if parentEt > childEt else childLab
+                        if val1st != val1et:
+                            result.append((val1st, val1et, val1Label))
+                            if debug: print(f'[DEBUG] -- {[val1st, val1et, val1Label]}')
+                        if debug: print(f'[DEBUG] -- {[val2st, val2et, val2Label]}')
+                        result.append((val2st, val2et, val2Label))
+                        if val3st != val3et:
+                            result.append((val3st, val3et, val3Label))
+                            if debug: print(f'[DEBUG] -- {[val3st, val3et, val3Label]}')
+                        del lastCopy[j]
+                        lastCopy = result + lastCopy
+                        break
+                else:
+                    continue
+            else:
+                lastCopy = cv
+        else:
+            print('SS')
+
+        print(lastCopy)
+'''
+v = [(0, 0.101870, 'R'), (0.090578, 0.127810, 'AM'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N'), (0.856712, 0.900000, 'M'), (0.876712, 0.891456, 'AM'), (0.891456, 0.951236, 'R')] # vector
+result = []
+temp = []
+indexes = []
+last = None
+
+for i, e in enumerate(v):
+    if i > 0:
+        last = v[i - 1]
+        currSt, currEt, currLabel = e
+        lastSt, lastEt, lastLabel = last
+        overlap = max(0, min(lastEt, currEt) - max(lastSt, currSt))
+        if overlap > 0:
+            print(f'[DEBUG] Overlap val: {overlap}')
+            val1st = lastSt
+            val1et = currSt if lastEt > currSt else lastEt
+            val1Label = lastLabel
+            val2st = val1et
+            val2et = currEt if lastEt > currEt else lastEt
+            val2Label = lastLabel + currLabel
+            val3st = val2et
+            val3et = lastEt if currEt < lastEt else currEt
+            val3Label = currLabel if currEt > lastEt else lastLabel
+            print(f'[DEBUG] -- {[val1st, val1et, val1Label]}')
+            print(f'[DEBUG] -- {[val2st, val2et, val2Label]}')
+            print(f'[DEBUG] -- {[val3st, val3et, val3Label]}')
+            #print(f'[DEBUG] current: {currSt}, last: {lastSt}')
+        #elif currSt < lastSt:
+        #    print(f'[DEBUG] last: {lastSt}')
+        #else:
+        #    print(f'[DEBUG] equal: {currSt}')
+        print('[INFO]', last, e)
+    if temp:
+        result.append(tuple(temp))
+        indexes.append(i - 1)
+        temp = []
+    else:
+        result.append(e)
+
+#for i, j in enumerate(indexes):
+#    del result[j - i]
+
+#print(result)
+
+for i, e in enumerate(v):
+    if i > 0:
+        last = v[i - 1]
+        currSt, currEt, currLabel = e
+        lastSt, lastEt, lastLabel = last
+        overlap = max(0, min(lastEt, currEt) - max(lastSt, currSt))
+        if overlap > 0:
+            print(f'[DEBUG] Overlap val: {overlap}')
+            print(f'[DEBUG] min: {min(currSt, lastSt)}')
+            print(f'[DEBUG] max: {max(lastEt, currEt)}')
+            val1st = min(lastSt, currSt)
+            val1et = max(lastSt, currSt)
+            val1Label = lastLabel if currSt > lastSt else currLabel
+            val2st = max(lastSt, currSt)
+            val2et = min(lastEt, currEt)
+            val2Label = lastLabel + currLabel
+            val3st = min(currEt, lastEt)
+            val3et = max(currEt, lastEt)
+            val3Label = currLabel if currEt > lastEt else lastLabel
+            if val1st != val1et:
+                print(f'[DEBUG] -- {[val1st, val1et, val1Label]}')
+            print(f'[DEBUG] -- {[val2st, val2et, val2Label]}')
+            if val3st != val3et:
+                print(f'[DEBUG] -- {[val3st, val3et, val3Label]}')
+        print('[INFO]', last, e)
+'''
+
+    def __process(self, debug=True):
+        from timeit import timeit
         t = process_time()
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
@@ -109,14 +295,23 @@ class Dex(object):
             raise Exception('There are difference between two observers')
         elapsed_time = process_time() - t
         print(elapsed_time)
-        self.__test(v1)
-        self.__test(v2)
+        self.__test4()
+        #track1 = self.__test(v1)
+        #track2 = self.__test(v2)
+        #self.__ratingtask(track1, track2)
+        #print(self.ratingtask.kappa())
+        #import edit_distance
+        #ref = [row[-1] for row in v1]
+        #hyp = [row[-1] for row in v2]
+        #sm = edit_distance.SequenceMatcher(a=ref, b=hyp)
+        #print('ratio', sm.ratio())
 
-    def __ratingtask(self, data):
-        #formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
-        self.ratingtask = agreement.AnnotationTask(data=data)
+    def __ratingtask(self, v1, v2):
+        formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
+        self.ratingtask = agreement.AnnotationTask(data=formatted)
 
     def graphBrokenBarh(self, title=None, tools=None):
+        pass
         if not title:
             title = 'IOA of {} - Observer 1 vs. Observer 2'.format(self.sample)
         if not tools:
@@ -200,7 +395,7 @@ class Dex(object):
         p.ygrid.grid_line_dash = [6, 4]
         p.xaxis.bounds = (0, 90)
         p.x_range.min_interval = 7
-        #show(p)
+        show(p)
 
     def __kappa(self):
         if not self.ratingtask:

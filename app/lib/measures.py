@@ -123,8 +123,9 @@ class Dex(object):
         from decimal import getcontext, ROUND_HALF_UP, Decimal
         getcontext().prec = 5
         getcontext().rounding = ROUND_HALF_UP
-        pv = [(0, 0.144560, 'RVF'), (0.201564, 0.856712, 'N')] # procesed vector
-        L = 1 # actually 90 seg
+        #pv = [(0, 0.144560, 'RVF'), (0.201564, 0.856712, 'N')] # procesed vector
+        pv = v.copy()
+        L = 91 # actually 90 seg
         MS = 1000 # constant
         d = 10 # framing in ms
         td = MS / d
@@ -134,9 +135,9 @@ class Dex(object):
             tst, tet = int(Decimal(st * td).to_integral_value()), int(Decimal(et * td).to_integral_value())
             #print(st*td, et*td)
             #print('[DEBUG]', tst, tet)
-            for j in range(tst, tet):
+            for j in range(tst, tet - 1):
                 track[j] = label
-        print(track)
+        return track
     def __test3(self):
         v = [(0, 0.101870, 'R'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N'), (0.856712, 0.900000, 'M')] # vector
         result = []
@@ -218,6 +219,7 @@ class Dex(object):
 
     def __process(self, debug=True):
         from timeit import timeit
+        from edit_distance import SequenceMatcher
         t = process_time()
         data1, data2 = ((k, v) for k, v in self.files.items())
         o1, v1 = data1
@@ -231,196 +233,29 @@ class Dex(object):
             print(self.agreements)
             raise Exception('There are difference between two observers')
         elapsed_time = process_time() - t
-        print(elapsed_time)
-        audFile = open('/home/crflores/Desktop/exp.txt', 'w')
-        for (s, e, l) in self.__omh(sorted(v1)):
-            audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')
-        #track1 = self.__test(v1)
-        #track2 = self.__test(v2)
-        #self.__ratingtask(track1, track2)
-        #print(self.ratingtask.kappa())
-        #import edit_distance
-        #ref = [row[-1] for row in v1]
-        #hyp = [row[-1] for row in v2]
-        #sm = edit_distance.SequenceMatcher(a=ref, b=hyp)
-        #print('ratio', sm.ratio())
-
-'''
-v = [(0, 2, 'R'), (0.5, 1.5, 'VF'), (0.75, 1.75, 'M'), (1, 2, 'R'), (1, 3, 'AM'), (4, 5, 'N'), (4.5, 5, 'M'), (4.9, 7, 'MM'), (7.1, 7.5, 'DD'), (6.5, 7.3, 'AA')]
-
-def subtractRanges(A, B):
-    if B[0] <= A[0]:
-        (As, Ae, Al), (Bs, Be, Bl) = A, B
-    else:
-        (As, Ae, Al), (Bs, Be, Bl) = B, A
-
-    if As > Be or Bs > Ae: # All of B visible
-        return tuple([(Bs, Be, Bl)]), tuple([(As, Ae, Al)]), tuple([])
-    Br = []
-    Ar = []
-    M = []
-    if As > Bs: # Beginning of B visible
-        Br.append((Bs, As, Bl))
-    if Ae < Be: # End of B visible
-        Br.append((Ae, Be, Bl))
-    elif Be != Ae:
-        Ar.append((Be, Ae, Al))
-    if As != Be:
-        l = Al + Bl if A[0] >= B[0] else Bl + Al
-        if Be < Ae:
-            M.append((As, Be, l))
-        else:
-            M.append((As, Ae, l))
-    return tuple(Br), tuple(Ar), tuple(M)
-
-i = 0
-vl = len(v)
-while i < vl and True:
-    if i + 1 < vl:
-        A, B = v[i], v[i + 1]
-        #print(f'[DEBUG] A: {A}, B: {B}')
-        #print(subtractRanges(A, B))
-        ranges = subtractRanges(A, B)
-        if ranges[-1]:
-            v.remove(A)
-            v.remove(B)
-            i = -1
-            for e1 in ranges:
-                for j, e2 in enumerate(e1):
-                    if e2:
-                        v.insert(0, e2)
-        vl = len(v)
-        v = sorted(v)
-        #print(f'[DEBUG] i: {i}, vl: {vl}')
-        #print(f'[DEBUG-END] vectors: {v}')
-    i += 1
-
-print(f'[INFO] -- {v}')
-usedKeys = []
-def getKeys(v, n=2):
-    return sorted(list(set([e[-1] for e in v if e[-1] not in usedKeys])))[0:n]
-keys = getKeys(v)
-currV = [e for e in v if e[-1] in keys]
-inQueue = (e for e in v if e[-1] not in keys)
-
-print(f'[DEBUG] start: {currV}')
-
-def isSame(v1, v2):
-    return True if v1[0] == v2[0] and v1[1] == v2[1] and v1[2] == v2[2] else False
-
-result = []
-lastCopy = currV.copy()
-used = []
-i, m = 0, 0
-unfinished = True
-while unfinished:
-    pe = lastCopy[i]
-    for j, ce in enumerate(lastCopy):
-        if isSame(pe, ce):
-            continue
-        (pst, pet, pl), (cst, cet, cl) = pe, ce
-        overlap = max(0, min(pet, cet) - max(pst, cst))
-        if overlap > 0:
-            print(f'main: {pe}, child: {ce}')
-            print(f'[DEBUG] prop overlap: {overlap}')
-            st1 = min(cst, pst)
-            et1 = max(cst, pst)
-            l1 = cl if pst > cst else pl
-            st2 = max(cst, pst)
-            et2 = min(cet, pet)
-            l2 = cl + pl
-            st3 = min(pet, cet)
-            et3 = max(pet, cet)
-            l3 = pl if pet > cet else cl
-            down, mid, up = (st1, et1, l1), (st2, et2, l2), (st3, et3, l3)
-            used.append(ce)
-            del lastCopy[i]
-            del lastCopy[j - 1]
-            if st1 == et1:
-                down = []
-            else:
-                down = [down]
-            if st3 == et3:
-                up = []
-            else:
-                up = [up]
-            lastCopy = lastCopy + down + [mid] + up
-            lastCopy = sorted(lastCopy)
-            i = 0
-            #print(f'[DEBUG] props: {down, mid, up}')
-            print(f'[DEBUG] -- {lastCopy}')
-            print()
-    i += 1
-    if i == len(lastCopy):
-        result += lastCopy
-        i = 0
-        usedKeys += keys
-        keys = getKeys(v)
-        lastCopy = [e for e in v if e[-1] in keys]
-        m += 1
-    if m == 4:
-        unfinished = False
-print(f'[INFO] -- {sorted(result)}')
-
-for j, (childSt, childEt, childLab) in enumerate(lastCopy):
-    overlap = max(0, min(parentEt, childEt) - max(parentSt, childSt))
-    if overlap > 0 and parentSt != childSt and parentEt != childEt and parentLab != childLab:
-        val1st = min(childSt, parentSt)
-        val1et = max(childSt, parentSt)
-        val1Label = childLab if parentSt > childSt else parentLab
-        val2st = max(childSt, parentSt)
-        val2et = min(childEt, parentEt)
-        val2Label = childLab + parentLab
-        val3st = min(parentEt, childEt)
-        val3et = max(parentEt, childEt)
-        val3Label = parentLab if parentEt > childEt else childLab
-        if val1st != val1et:
-            result.append((val1st, val1et, val1Label))
-        result.append((val2st, val2et, val2Label))
-        if val3st != val3et:
-            result.append((val3st, val3et, val3Label))
-        del lastCopy[j]
-        lastCopy = sorted(list(set(result + lastCopy)))
-lastEvent = v[0]
-toAdd = []
-newDict = {}
-k = 0
-for i, e in enumerate(v):
-    if i > 0:
-        overlap = max(0, min(e[1], lastEvent[1]) - max(e[0], lastEvent[0]))
-        if overlap > 0:
-            toAdd.append(e)
-            #print(f'last -> {lastEvent}, current -> {e}')
-        else:
-            toAdd.append(lastEvent)
-            newDict[k] = tuple(sorted(toAdd))
-            lastEvent = e
-            toAdd = []
-            k += 1
-else:
-    toAdd.append(lastEvent)
-    newDict[k] = tuple(sorted(toAdd))
-    lastEvent = None
-    toAdd = []
-    k = 0
-
-a = []
-for k, v in newDict.items():
-    for i, e in enumerate(v):
-        lastEvent = e
-        if i == 0:
-            pass
-        val1st = min(childSt, parentSt)
-        val1et = max(childSt, parentSt)
-        val1Label = childLab if parentSt > childSt else parentLab
-        val2st = max(childSt, parentSt)
-        val2et = min(childEt, parentEt)
-        val2Label = childLab + parentLab
-        val3st = min(parentEt, childEt)
-        val3et = max(parentEt, childEt)
-        val3Label = parentLab if parentEt > childEt else childLab
-    print(k, v)
-'''
+        print(f'[BENCHMARK] -- {elapsed_time}ms')
+        ov1 = self.__omh(v1)
+        print(f'[BENCHMARK] from omh v1 -- {timeit(lambda: self.__omh(v1), number=1)}ms')
+        ov2 = self.__omh(v2)
+        print(f'[BENCHMARK] from omh v2 -- {timeit(lambda: self.__omh(v2), number=1)}ms')
+        '''with open('/home/crflores/Desktop/exp1.txt', 'w') as audFile:
+            for (s, e, l) in ov1:
+                audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')
+        with open('/home/crflores/Desktop/exp2.txt', 'w') as audFile:
+            for (s, e, l) in ov2:
+                audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')'''
+        ref = self.__test2(ov1)
+        print(f'[BENCHMARK] -- {timeit(lambda: self.__test2(ov1), number=1)}ms')
+        hyp = self.__test2(ov2)
+        print(f'[BENCHMARK] -- {timeit(lambda: self.__test2(ov2), number=1)}ms')
+        #sm = SequenceMatcher(a=ref, b=hyp)
+        #print(f'match(%): {sm.ratio()}')
+        self.__ratingtask(ref, hyp)
+        print(f'[INFO] kappa: {self.ratingtask.kappa() * 100}%')
+        ref = [row[-1] for row in ov1]
+        hyp = [row[-1] for row in ov2]
+        sm = SequenceMatcher(a=ref, b=hyp)
+        print(f'[INFO] match: {sm.ratio() * 100}%')
 
     def __ratingtask(self, v1, v2):
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]

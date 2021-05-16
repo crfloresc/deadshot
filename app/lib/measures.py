@@ -45,7 +45,7 @@ class Dex(object):
 
     def __checkIntegrity(self):
         o1, o2 = (len(v) for k, v in self.agreements.items())
-        print([o1, o2])
+        print(f'[INFO] observer1: {o1}, observer2: {o2}')
         return True if o1 == o2 else False
 
     def __compare(self, v1, v2, observer1, observer2, num):
@@ -119,7 +119,8 @@ class Dex(object):
             limit = limit + 1
         print('len track', len(track))
         return track
-    def __test2(self, v):
+
+    def __upsample(self, v):
         from decimal import getcontext, ROUND_HALF_UP, Decimal
         getcontext().prec = 5
         getcontext().rounding = ROUND_HALF_UP
@@ -138,33 +139,6 @@ class Dex(object):
             for j in range(tst, tet - 1):
                 track[j] = label
         return track
-    def __test3(self):
-        v = [(0, 0.101870, 'R'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N'), (0.856712, 0.900000, 'M')] # vector
-        result = []
-        temp = []
-        indexes = []
-
-        for i, e in enumerate(v):
-            st, et, label = e
-            if i > 0:
-                rst, ret, rlabel = result[i - 1]
-                if st < ret:
-                    if st >= rst:
-                        temp.append(st)
-                    if et >= ret:
-                        temp.append(et)
-                    temp.append(rlabel + label)
-            if temp:
-                result.append(tuple(temp))
-                indexes.append(i - 1)
-                temp = []
-            else:
-                result.append(e)
-
-        for i, j in enumerate(indexes):
-            del result[j - i]
-
-        print(result)
 
     def __subtractRanges(self, A, B):
         ''' SUBTRACTS A FROM B
@@ -244,10 +218,10 @@ class Dex(object):
         with open('/home/crflores/Desktop/exp2.txt', 'w') as audFile:
             for (s, e, l) in ov2:
                 audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')'''
-        ref = self.__test2(ov1)
-        print(f'[BENCHMARK] -- {timeit(lambda: self.__test2(ov1), number=1)}ms')
-        hyp = self.__test2(ov2)
-        print(f'[BENCHMARK] -- {timeit(lambda: self.__test2(ov2), number=1)}ms')
+        ref = self.__upsample(ov1)
+        print(f'[BENCHMARK] from f(ov1) -- {timeit(lambda: self.__test2(ov1), number=1)}ms')
+        hyp = self.__upsample(ov2)
+        print(f'[BENCHMARK] from f(ov2) -- {timeit(lambda: self.__test2(ov2), number=1)}ms')
         #sm = SequenceMatcher(a=ref, b=hyp)
         #print(f'match(%): {sm.ratio()}')
         self.__ratingtask(ref, hyp)

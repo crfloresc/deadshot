@@ -164,58 +164,118 @@ class Dex(object):
             del result[j - i]
 
         print(result)
-    def __test4(self):
-        v = [(0, 2, 'R'), (0.5, 1.5, 'VF'), (0.75, 1.75, 'M')]
-        cv = v
-        ccv = []
-        result = []
-        debug = True
 
-        lastCopy = None
-        toAdd = []
-        for i, (parentSt, parentEt, parentLab) in enumerate(cv):
-            print(f'[DEBUG] parent: {(parentSt, parentEt, parentLab)}')
-            print(f'[DEBUG] clone: {lastCopy}')
-            if i > 0:
-                for j, (childSt, childEt, childLab) in enumerate(lastCopy):
-                    overlap = max(0, min(parentEt, childEt) - max(parentSt, childSt))
-                    print(f'[DEBUG] child {(parentSt, parentEt, parentLab), overlap, (childSt, childEt, childLab)}')
-                    if overlap > 0 and parentSt != childSt and parentEt != childEt and parentLab != childLab:
-                        val1st = min(childSt, parentSt)
-                        val1et = max(childSt, parentSt)
-                        val1Label = childLab if parentSt > childSt else parentLab
-                        val2st = max(childSt, parentSt)
-                        val2et = min(childEt, parentEt)
-                        val2Label = childLab + parentLab
-                        val3st = min(parentEt, childEt)
-                        val3et = max(parentEt, childEt)
-                        val3Label = parentLab if parentEt > childEt else childLab
-                        if val1st != val1et:
-                            result.append((val1st, val1et, val1Label))
-                        result.append((val2st, val2et, val2Label))
-                        if val3st != val3et:
-                            result.append((val3st, val3et, val3Label))
-                        del lastCopy[j]
-                        #print(result)
-                        lastCopy = sorted(list(set(result + lastCopy)))
-            else:
-                lastCopy = cv.copy()
+    def __subtractRanges(self, A, B):
+        ''' SUBTRACTS A FROM B
+            e.g, A =    ------
+                 B =  -----------
+            result =  --      ---
+            Returns tuples of new range(s)'''
+        if B[0] <= A[0]:
+            (As, Ae, Al), (Bs, Be, Bl) = A, B
+        else:
+            (As, Ae, Al), (Bs, Be, Bl) = B, A
 
-        lastIndex = 0
-        continuity = []
-        for i, (st, et, lab) in enumerate(lastCopy):
-            if i > 0:
-                if lastCopy[0][1] == st:
-                    lastIndex = i
-                    continuity.append((st, et, lab))
+        if As > Be or Bs > Ae: # All of B visible
+            return tuple([(Bs, Be, Bl)]), tuple([(As, Ae, Al)]), tuple([])
+        Br = []
+        Ar = []
+        M = []
+        if As > Bs: # Beginning of B visible
+            Br.append((Bs, As, Bl))
+        if Ae < Be: # End of B visible
+            Br.append((Ae, Be, Bl))
+        elif Be != Ae:
+            Ar.append((Be, Ae, Al))
+        if As != Be:
+            l = Al + Bl if A[0] >= B[0] else Bl + Al
+            if Be < Ae:
+                M.append((As, Be, l))
             else:
-                continuity.append((st, et, lab))
-        print(lastCopy)
+                M.append((As, Ae, l))
+        return tuple(Br), tuple(Ar), tuple(M)
+
+    def __omh(self, vec):
+        v = vec.copy()
+        i = 0
+        vl = len(v)
+        while i < vl:
+            if i + 1 < vl:
+                A, B = v[i], v[i + 1]
+                ranges = self.__subtractRanges(A, B)
+                if ranges[-1]:
+                    v.remove(A)
+                    v.remove(B)
+                    i = -1
+                    for e1 in ranges:
+                        for j, e2 in enumerate(e1):
+                            if e2:
+                                v.insert(0, e2)
+                vl = len(v)
+                v = sorted(v)
+            i += 1
+        return v
+
+    def __process(self, debug=True):
+        from timeit import timeit
+        t = process_time()
+        data1, data2 = ((k, v) for k, v in self.files.items())
+        o1, v1 = data1
+        o2, v2 = data2
+        if not v1 or not v2:
+            raise Exception('v1 or v2 not present')
+
+        self.__compare(v1, v2, o1, o2, 1)
+        self.__compare(v2, v1, o2, o1, 2)
+        if not self.__checkIntegrity():
+            print(self.agreements)
+            raise Exception('There are difference between two observers')
+        elapsed_time = process_time() - t
+        print(elapsed_time)
+        audFile = open('/home/crflores/Desktop/exp.txt', 'w')
+        for (s, e, l) in self.__omh(sorted(v1)):
+            audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')
+        #track1 = self.__test(v1)
+        #track2 = self.__test(v2)
+        #self.__ratingtask(track1, track2)
+        #print(self.ratingtask.kappa())
+        #import edit_distance
+        #ref = [row[-1] for row in v1]
+        #hyp = [row[-1] for row in v2]
+        #sm = edit_distance.SequenceMatcher(a=ref, b=hyp)
+        #print('ratio', sm.ratio())
 
 '''
+v = [(0, 2, 'R'), (0.5, 1.5, 'VF'), (0.75, 1.75, 'M'), (1, 2, 'R'), (1, 3, 'AM'), (4, 5, 'N'), (4.5, 5, 'M'), (4.9, 7, 'MM'), (7.1, 7.5, 'DD'), (6.5, 7.3, 'AA')]
+
+def subtractRanges(A, B):
+    if B[0] <= A[0]:
+        (As, Ae, Al), (Bs, Be, Bl) = A, B
+    else:
+        (As, Ae, Al), (Bs, Be, Bl) = B, A
+
+    if As > Be or Bs > Ae: # All of B visible
+        return tuple([(Bs, Be, Bl)]), tuple([(As, Ae, Al)]), tuple([])
+    Br = []
+    Ar = []
+    M = []
+    if As > Bs: # Beginning of B visible
+        Br.append((Bs, As, Bl))
+    if Ae < Be: # End of B visible
+        Br.append((Ae, Be, Bl))
+    elif Be != Ae:
+        Ar.append((Be, Ae, Al))
+    if As != Be:
+        l = Al + Bl if A[0] >= B[0] else Bl + Al
+        if Be < Ae:
+            M.append((As, Be, l))
+        else:
+            M.append((As, Ae, l))
+    return tuple(Br), tuple(Ar), tuple(M)
+
 i = 0
 vl = len(v)
-while i < vl and False:
+while i < vl and True:
     if i + 1 < vl:
         A, B = v[i], v[i + 1]
         #print(f'[DEBUG] A: {A}, B: {B}')
@@ -235,10 +295,7 @@ while i < vl and False:
         #print(f'[DEBUG-END] vectors: {v}')
     i += 1
 
-#print(f'[INFO] -- {v}')
-
-
-v = [(0, 2, 'R'), (0.5, 1.5, 'VF'), (0.75, 1.75, 'M'), (1, 2, 'R'), (1, 3, 'AM'), (4, 5, 'N'), (4.5, 5, 'M'), (4.9, 7, 'MM'), (7.1, 7.5, 'DD'), (6.5, 7.3, 'AA')]
+print(f'[INFO] -- {v}')
 usedKeys = []
 def getKeys(v, n=2):
     return sorted(list(set([e[-1] for e in v if e[-1] not in usedKeys])))[0:n]
@@ -254,7 +311,7 @@ def isSame(v1, v2):
 result = []
 lastCopy = currV.copy()
 used = []
-i = 0
+i, m = 0, 0
 unfinished = True
 while unfinished:
     pe = lastCopy[i]
@@ -295,11 +352,16 @@ while unfinished:
             print()
     i += 1
     if i == len(lastCopy):
-        unfinished = False
-        result.append(lastCopy)
+        result += lastCopy
         i = 0
-        usedKeys.append(keys)
-print(f'[INFO] -- {lastCopy}')
+        usedKeys += keys
+        keys = getKeys(v)
+        lastCopy = [e for e in v if e[-1] in keys]
+        m += 1
+    if m == 4:
+        unfinished = False
+print(f'[INFO] -- {sorted(result)}')
+
 for j, (childSt, childEt, childLab) in enumerate(lastCopy):
     overlap = max(0, min(parentEt, childEt) - max(parentSt, childSt))
     if overlap > 0 and parentSt != childSt and parentEt != childEt and parentLab != childLab:
@@ -359,33 +421,6 @@ for k, v in newDict.items():
         val3Label = parentLab if parentEt > childEt else childLab
     print(k, v)
 '''
-
-    def __process(self, debug=True):
-        from timeit import timeit
-        t = process_time()
-        data1, data2 = ((k, v) for k, v in self.files.items())
-        o1, v1 = data1
-        o2, v2 = data2
-        if not v1 or not v2:
-            raise Exception('v1 or v2 not present')
-
-        self.__compare(v1, v2, o1, o2, 1)
-        self.__compare(v2, v1, o2, o1, 2)
-        if not self.__checkIntegrity():
-            print(self.agreements)
-            raise Exception('There are difference between two observers')
-        elapsed_time = process_time() - t
-        print(elapsed_time)
-        self.__test4()
-        #track1 = self.__test(v1)
-        #track2 = self.__test(v2)
-        #self.__ratingtask(track1, track2)
-        #print(self.ratingtask.kappa())
-        #import edit_distance
-        #ref = [row[-1] for row in v1]
-        #hyp = [row[-1] for row in v2]
-        #sm = edit_distance.SequenceMatcher(a=ref, b=hyp)
-        #print('ratio', sm.ratio())
 
     def __ratingtask(self, v1, v2):
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]

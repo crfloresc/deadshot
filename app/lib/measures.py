@@ -1,16 +1,20 @@
 from bisect import bisect_left
-from bokeh.plotting import figure, output_file, show
+from bokeh.plotting import figure, output_file, show, save
 from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
 from nltk import agreement
 from time import process_time
+import numpy as np
+from decimal import getcontext, ROUND_HALF_UP, Decimal
+getcontext().prec = 5
+getcontext().rounding = ROUND_HALF_UP
 
-class Dex(object):
-    def __init__(self, sample, dataset, src=None, offset=0.150, limit=60.00, debug=False):
-        self.sample = sample
-        self.files = dataset
-        self.src = src
+class Deadshot(object):
+    def __init__(self, sampleName, sampleData, validLabels, offset=0.150, t=60.00, debug=False):
+        self.sampleName = sampleName
+        self.sampleData = sampleData
+        self.validLabels = validLabels
         self.offset = offset
-        self.limit = limit
+        self.t = t
         self.debug = debug
         # For processing
         self.data = {}
@@ -23,7 +27,7 @@ class Dex(object):
         self.railmap = {}
         self.ioacolormap = {}
         self.ioarailmap = {}
-        # For agree
+        # For agreement
         self.ratingtask = None
 
         self.__setupDicts()
@@ -35,7 +39,7 @@ class Dex(object):
         self.railmap = {'N': 0, 'M': 0.0013, 'R': 0.0026, 'VF': 0.0039, 'AM': 0.0052}
         self.ioacolormap = {'agreement': 'green', 'noAgreement': 'red'}
         self.ioarailmap = {'agreement': 0.25, 'noAgreement': 0.24}
-        for k, v in self.files.items():
+        for k, v in self.sampleData.items():
             val = val - 0.05
             self.data[k] = []
             self.agreements[k] = []
@@ -67,78 +71,6 @@ class Dex(object):
                     break
         #self.agreements[observer2] = res
         #'''
-
-    def __test(self, v):
-        from math import floor, ceil
-        cv = v.copy()
-        #cv = [(0, 0.124560, 'R'), (0, 0.144560, 'VF'), (0.201564, 0.856712, 'N')]
-        limit = 120
-        d = 100 # 441
-        last = None
-        reset = False
-        track = [_ for _ in range(0, int(limit) * d)]
-        while cv:
-            reset = False
-            for i in range(0, int(limit) * d):
-                if reset:
-                    break
-                if last:
-                    ts, te, label = last
-                    sts, ste = floor(ts * d), floor(te * d)
-                    #print(i, sts, ste, label)
-                    if i >= sts and i <= ste:
-                        if track[i] != i:
-                            track[i] = track[i] + label
-                        else:
-                            track[i] = label
-                        if i == ste or i == ceil(te * d) or i == round(te * d):
-                            last = None
-                            reset = True
-                            del cv[0]
-                    if i >= ste:
-                        break
-                else:
-                    for j, (ts, te, label) in enumerate(cv):
-                        ds = i - ts * d
-                        de = i - te * d
-                        if i < te * d and ds >= 0 and de <= 0:
-                            #if i != round(ts * d) and i > round(ts * d) and i < round(te * d):
-                            #    print(ts * d, te * d, label, track[round(ts * d)])
-                            if track[round(ts * d)] != label and i > 0:
-                                #print(ts, te, label, '-', ts * d, te * d, '-', track[round(ts * d)], i)
-                                reset = True
-                                last = (ts, te, label)
-                                break
-                            if track[i] != i:
-                                track[i] = track[i] + label
-                            else:
-                                track[i] = label
-                            if i == floor(te * d) or i == ceil(te * d) or i == round(te * d):
-                                del cv[j]
-                            break
-            limit = limit + 1
-        print('len track', len(track))
-        return track
-
-    def __upsample(self, v):
-        from decimal import getcontext, ROUND_HALF_UP, Decimal
-        getcontext().prec = 5
-        getcontext().rounding = ROUND_HALF_UP
-        #pv = [(0, 0.144560, 'RVF'), (0.201564, 0.856712, 'N')] # procesed vector
-        pv = v.copy()
-        L = 91 # actually 90 seg
-        MS = 1000 # constant
-        d = 10 # framing in ms
-        td = MS / d
-        defaultLabel = 'R'
-        track = [defaultLabel for _ in range(0, L * int(td))]
-        for i, (st, et, label) in enumerate(pv):
-            tst, tet = int(Decimal(st * td).to_integral_value()), int(Decimal(et * td).to_integral_value())
-            #print(st*td, et*td)
-            #print('[DEBUG]', tst, tet)
-            for j in range(tst, tet - 1):
-                track[j] = label
-        return track
 
     def __subtractRanges(self, A, B):
         ''' SUBTRACTS A FROM B
@@ -179,23 +111,49 @@ class Dex(object):
                 A, B = v[i], v[i + 1]
                 ranges = self.__subtractRanges(A, B)
                 if ranges[-1]:
-                    v.remove(A)
-                    v.remove(B)
+                    #v.remove(A)
+                    #v.remove(B)
+                    #v = list(set(v) - set([A, B]))
+                    #v = v[:i] + v[i + 2:]
+                    del v[i]
+                    del v[i + 1]
+                    #v = [item for item in v if item not in [A, B] ]
+                    #v = list(filter(lambda item: item not in [A, B], v))
                     i = -1
-                    for e1 in ranges:
-                        for j, e2 in enumerate(e1):
-                            if e2:
-                                v.insert(0, e2)
-                vl = len(v)
-                v = sorted(v)
+                    vals = [e for _ in ranges for e in _ if _]
+                    v = vals + v
+                    vl = len(v)
+                    #for e1 in ranges:
+                    #    if e1:
+                    #        for e2 in e1:
+                    #            v.insert(0, e2) #if e2:
+                    #v = sorted(v)
             i += 1
         return v
+
+    def __upsample(self, v, pad='R', L=60.00, d=10):
+        '''__upsample(self, v) -> list
+        e.g. #pv = [(0, 0.144560, 'RVF'), (0.201564, 0.856712, 'N')] # procesed vector
+
+        Keyword arguments:
+        v   -- the vector
+        pad -- the padding to add to new vector (default R)
+        L   -- the length of audio (default 91)
+        d   -- the framing in ms (default 10)
+        '''
+        td = 1000 / d # 1000 is ms
+        track = [pad for _ in range(0, int(L * td))]
+        for (st, et, label) in v:
+            tst, tet = int(Decimal(st * td).to_integral_value()), int(Decimal(et * td).to_integral_value())
+            for j in range(tst, tet - 1):
+                track[j] = label
+        return track
 
     def __process(self, debug=True):
         from timeit import timeit
         from edit_distance import SequenceMatcher
         t = process_time()
-        data1, data2 = ((k, v) for k, v in self.files.items())
+        data1, data2 = ((k, v) for k, v in self.sampleData.items())
         o1, v1 = data1
         o2, v2 = data2
         if not v1 or not v2:
@@ -207,43 +165,64 @@ class Dex(object):
             print(self.agreements)
             raise Exception('There are difference between two observers')
         elapsed_time = process_time() - t
-        print(f'[BENCHMARK] -- {elapsed_time}ms')
+        print(f'[BENCHMARK] -- {elapsed_time * 1000:.4f}ms')
         ov1 = self.__omh(v1)
-        print(f'[BENCHMARK] from omh v1 -- {timeit(lambda: self.__omh(v1), number=1)}ms')
+        print(f'[BENCHMARK] from omh v1 -- {timeit(lambda: self.__omh(v1), number=1000) * 1000:.4f}ms')
         ov2 = self.__omh(v2)
-        print(f'[BENCHMARK] from omh v2 -- {timeit(lambda: self.__omh(v2), number=1)}ms')
+        print(f'[BENCHMARK] from omh v2 -- {timeit(lambda: self.__omh(v2), number=1000) * 1000:.4f}ms')
         '''with open('/home/crflores/Desktop/exp1.txt', 'w') as audFile:
             for (s, e, l) in ov1:
                 audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')
         with open('/home/crflores/Desktop/exp2.txt', 'w') as audFile:
             for (s, e, l) in ov2:
                 audFile.write(str(s) + '\t' + str(e) + '\t' + str(l) + '\n')'''
-        ref = self.__upsample(ov1)
-        print(f'[BENCHMARK] from f(ov1) -- {timeit(lambda: self.__test2(ov1), number=1)}ms')
-        hyp = self.__upsample(ov2)
-        print(f'[BENCHMARK] from f(ov2) -- {timeit(lambda: self.__test2(ov2), number=1)}ms')
+        ref = self.__upsample(ov1, L=self.t)
+        print(f'[BENCHMARK] from f(ov1) -- {timeit(lambda: self.__upsample(ov1, L=self.t), number=1) * 1000:.4f}ms')
+        hyp = self.__upsample(ov2, L=self.t)
+        print(f'[BENCHMARK] from f(ov2) -- {timeit(lambda: self.__upsample(ov2, L=self.t), number=1) * 1000:.4f}ms')
+        print(f'[DEBUG] len of {len(ref)}, {len(hyp)}')
+        '''with open('/home/crflores/Desktop/ref.txt', 'w') as audFile:
+            for v in ref:
+                audFile.write(str(ref) + '\n')
+        with open('/home/crflores/Desktop/hyp.txt', 'w') as audFile:
+            for v in hyp:
+                audFile.write(str(hyp) + '\n')'''
         #sm = SequenceMatcher(a=ref, b=hyp)
         #print(f'match(%): {sm.ratio()}')
         self.__ratingtask(ref, hyp)
-        print(f'[INFO] kappa: {self.ratingtask.kappa() * 100}%')
+
+        '''ref = [row[-1] for row in ref]
+        hyp = [row[-1] for row in hyp]
+        sm = SequenceMatcher(a=ref, b=hyp)
+        print(f'[INFO] match: {sm.real_quick_ratio() * 100:.2f}%')'''
+
+        print(f'[INFO] kappa: {self.ratingtask.kappa() * 100:.2f}%')
         ref = [row[-1] for row in ov1]
         hyp = [row[-1] for row in ov2]
         sm = SequenceMatcher(a=ref, b=hyp)
-        print(f'[INFO] match: {sm.ratio() * 100}%')
+        print(f'[INFO] match: {sm.ratio() * 100:.2f}%')
 
     def __ratingtask(self, v1, v2):
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
         self.ratingtask = agreement.AnnotationTask(data=formatted)
 
     def graphBrokenBarh(self, title=None, tools=None):
-        pass
+        #return None
         if not title:
-            title = 'IOA of {} - Observer 1 vs. Observer 2'.format(self.sample)
+            title = f'IOA of {self.sampleName} - Observer 1 vs. Observer 2'
         if not tools:
             tools = 'wheel_zoom, pan, save, reset,'
-        p = figure(title=title, tools=tools, y_range=Range1d(bounds=(0, 1)), x_range=(0, 60), sizing_mode='stretch_both')
+        filename = f'./out/{self.sampleName}.html' # @todo: change static output path
+        output_file(filename=filename, title=title)
+        p = figure(
+            title=title,
+            tools=tools,
+            y_range=Range1d(bounds=(0, 1)),
+            x_range=(0, 60),
+            sizing_mode='stretch_both')
 
         # Draw all events
+        print('[GRAPH] drawing all events ...')
         for i, (k, v) in enumerate(self.data.items()):
             for j, e in enumerate(v):
                 start, end, label = e
@@ -259,9 +238,11 @@ class Dex(object):
                 p.hbar(y='y', height=0.007, left='start', right='end', name=label, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7, source=source)
 
         # Only for draw legend colors
+        print('[GRAPH] drawing legends ...')
         for k, v in self.colormap.items():
-            p.line(0, 0, line_color=v, legend_label=k, line_width=6)
+            p.line(0, 0, line_color=v, legend_label=k, line_width=2)
 
+        # Create agreement bars
         result = {'agreement': [], 'noAgreement': []}
         lastStart, lastEnd = 0, 0
         z1, z2 = 0, 0
@@ -278,7 +259,7 @@ class Dex(object):
             lastStart = newEnd
         else:
             result['agreement'].append((z1, z2))
-            result['noAgreement'].append((z2, self.limit))
+            result['noAgreement'].append((z2, self.t))
 
         # draw temp agreement bars
         '''railmap = {'ZZ': 0.21, 'XX': 0.19}
@@ -289,6 +270,7 @@ class Dex(object):
                 p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_alpha=0.8, line_width=6)'''
 
         # draw agreement bar and annotation
+        print('[GRAPH] drawing agreement bars ...')
         for k, v in result.items():
             for (start, end) in v:
                 color, rail = self.ioacolormap.get(k), self.ioarailmap.get(k)
@@ -297,40 +279,39 @@ class Dex(object):
                 #p.line([start, start + abs(end - start)], [y, y], line_color=color, line_alpha=0.8, line_width=6)
                 p.hbar(y=rail, height=0.007, left=start, right=end, line_color=color, line_alpha=0.8, fill_color=color, fill_alpha=0.7)
 
-        # add observers names
-        '''citation = Label(x=70, y=500, x_units='screen', y_units='screen',
-                 text=self.__kappa(0.87), render_mode='css',
-                 border_line_color='black', border_line_alpha=1.0,
+        # add ioa percent and customs grid
+        print('[GRAPH] drawing ioa percent and custom grid ...')
+        ioaPercent = Label(x=70, y=500, x_units='screen', y_units='screen',
+                 text=self.__kappa(), render_mode='css',
+                 border_line_color='black', border_line_alpha=0.9,
                  background_fill_color='white', background_fill_alpha=1.0)
-        p.add_layout(citation)'''
+        p.add_layout(ioaPercent)
+        p.line([0, self.t], [0.33, 0.33], line_color='gray', line_width=1, line_alpha=0.2)
+        p.line([0, self.t], [0.28, 0.28], line_color='gray', line_width=1, line_alpha=0.2)
 
-        # Notation
-        p.line([0, self.limit], [0.33, 0.33], line_color='gray', line_width=1, line_alpha=0.2)
-        p.line([0, self.limit], [0.28, 0.28], line_color='gray', line_width=1, line_alpha=0.2)
-
-        ticks = [i for i in range(0, int(self.limit) + 1) if i % 2 == 0]
-        node_hover_tool = HoverTool(names=['VF', 'R', 'N', 'M', 'AM'], tooltips=[('label', '@label'), ('start', '@start'), ('end', '@end')])
-
-        p.add_tools(node_hover_tool)
-        p.legend.title = 'Etiquetas'
+        print('[GRAPH] setting up stuffs ...')
+        p.add_tools(
+            HoverTool(
+                names=self.validLabels,
+                tooltips=[('label', '@label'), ('start', '@start'), ('end', '@end')]
+                ))
+        p.legend.title = 'Labels'
+        p.legend.title_text_font_style = 'bold'
+        p.legend.title_text_font_size = '20px'
         p.xaxis.axis_label = 'Timeline'
+        p.xaxis.ticker = [i for i in range(0, int(self.t) + 1) if i % 2 == 0]
+        p.xaxis.bounds = (0, int(self.t))
         p.yaxis.axis_label = 'Observer'
-        #p.legend.click_policy = 'hide'
-        p.xaxis.ticker = ticks
+        p.yaxis.major_label_text_color = None
+        p.yaxis.major_tick_line_color = None
+        p.yaxis.minor_tick_line_color = None
         p.ygrid.grid_line_dash = [6, 4]
-        p.xaxis.bounds = (0, 90)
         p.x_range.min_interval = 7
-        #show(p)
+        print('[GRAPH] Finished!')
+        save(p)
 
     def __kappa(self):
         if not self.ratingtask:
             return None
         kappa = self.ratingtask.kappa()
         return 'Cohen\'s Kappa: {}%'.format(round(kappa * 100, 4))
-
-    def saveMetrics(self):
-        filename = '{0}/output/metrics.txt'.format(self.src)
-        with open(filename, 'a') as out:
-            out.write('Observer {0}\n'.format(self.observer + 1))
-            out.write('{0}, attemps: {1}\n'.format(self.oName, self.attemps))
-            #out.write('Cohen\'s Kappa: {0}%\n'.format(round(self.kappa(printRes=False) * 100, 4)))

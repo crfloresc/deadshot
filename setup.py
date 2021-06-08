@@ -2,8 +2,8 @@ import setuptools
 
 setuptools.setup(
     name='deadshot',
-    version='0.0.1',
-    author='',
+    version='1.0.0',
+    author='Carlos Flores',
     author_email='',
     description='',
     packages=setuptools.find_packages(),

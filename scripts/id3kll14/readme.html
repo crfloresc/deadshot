@@ -1,0 +1,427 @@
+<html>
+<head>
+ <title>h e a d s t r o n g . d e :: id3kill for windows</title>
+ <META NAME="description" CONTENT="ID3KILL removes ID3v1 and ID3v2 tags from MP3 files. Very fast processing, no file limit. Freeware.">
+ <META NAME="keywords" CONTENT="headstrong, id3kill, mp3, id3, remove, erase, id3v1, id3v2, tag, tags, audio, freeware, tool">
+ <meta name="author" content="Moritz Bartl">
+ <meta name="robots" content="index,follow">
+ <meta name="MSSmartTagsPreventParsing" content="true">
+ <LINK REL="SHORTCUT ICON" HREF="http:/www.headstrong.de/favicon.ico">
+ <script type="text/javascript" language="JavaScript">
+ <!--
+  if(top.frames.length > 0)
+   top.location.href=self.location;
+
+  var icqrinfo = "ICQr Information reads out information stored in ICQ .DAT files, including personal information & passwords";
+  var webclicker = "WebClicker uses public proxies to generate artificial clicks";
+  var id3kill = "ID3KILL removes id3v1 and id3v2 tags from mp3 files";
+  var othersoft = "More freeware by Moritz Bartl and other programmers";
+
+//browsercheck from www.bratta.com
+function checkBrowser(){
+	this.ver=navigator.appVersion
+	this.dom=document.getElementById?1:0
+	this.ie5=(this.ver.indexOf("MSIE 5")>-1 && this.dom)?1:0;
+	this.ie4=(document.all && !this.dom)?1:0;
+	this.ns5=(this.dom && parseInt(this.ver) >= 5) ?1:0;
+	this.ns4=(document.layers && !this.dom)?1:0;
+	this.bw=(this.ie5 || this.ie4 || this.ns4 || this.ns5)
+	return this
+}
+
+bw=new checkBrowser()
+
+function makeChangeTextObj(obj) {
+   	this.css=bw.dom? document.getElementById(obj).style:bw.ie4?document.all[obj].style:bw.ns4?document.layers[obj]:0;
+}
+
+var running=0;
+
+// NN4 does not work
+
+// for NN6/IE/OPERA :
+
+  function pop (objid) {
+
+	if ((running==1)||(bw.ns4)) return;
+
+	running=1;
+	oobject1=new makeChangeTextObj('datac1');
+	oobject2=new makeChangeTextObj('datac2');
+	oobject3=new makeChangeTextObj('datac3');
+	oobject4=new makeChangeTextObj('datac4');
+	omenu1=new makeChangeTextObj('menuc1');
+	omenu2=new makeChangeTextObj('menuc2');
+	omenu3=new makeChangeTextObj('menuc3');
+	omenu4=new makeChangeTextObj('menuc4');
+
+	oobject=new makeChangeTextObj(objid);
+
+	if (oobject.css.visibility=='visible') {
+		oobject.css.visibility='hidden';
+		omenu2.css.top=0;
+		omenu3.css.top=0;
+		omenu4.css.top=0;
+	} else {
+		menuheight = oobject.css.height;
+		
+		if (objid!='datac4') omenu4.css.top=menuheight; else omenu4.css.top=0;
+		if ( (objid=='datac1')||(objid=='datac2') ) {
+			omenu3.css.top=menuheight; 
+			if (objid=='datac1') omenu2.css.top=menuheight; else omenu2.css.top=0;
+		} else {
+			omenu3.css.top=0;
+			omenu2.css.top=0;
+		}
+		oobject.css.visibility='visible';
+		if (objid != 'datac1') oobject1.css.visibility='hidden';
+		if (objid != 'datac2') oobject2.css.visibility='hidden';
+		if (objid != 'datac3') oobject3.css.visibility='hidden';
+		if (objid != 'datac4') oobject4.css.visibility='hidden';
+	}
+	window.setTimeout("running=0",1); // 1 sec delay needed to prevent immediate "open-close"
+   }   
+ //-->
+ </script>
+ <style type="text/css">
+  body { margin-left:0px; margin-right:0px; margin-top:0px; margin-bottom:0px; background-repeat:repeat-y; }
+  a.menu { font-size:11px; }
+  a.menu:hover { color: #000066; text-decoration:underline; }
+  a.headline { color: #000000; text-decoration:none; font-size:11px; }
+  a.headline:hover { color: #000000; text-decoration:none; }
+  div { margin:0 0 0 0;border:none;padding:0; }
+ </style>
+</head>
+<body leftmargin=0 topmargin=0 bgcolor=#ffffff text=#000000 scroll=auto link=#0000CC alink=#0000CC vlink=#0000CC background="readmefiles/back.gif">
+<table cellpadding=0 cellspacing=0 border=0 bgcolor=#000000 width=100% height=38>
+ <tr>
+ <td bgcolor=#000000 height=38 align=left valign=middle>
+  <a href="http:/www.headstrong.de/" target="_top"><img src="readmefiles/logo-anim.gif" border=0 height=38 width=204 alt="headstrong.de"></a>
+ </td>
+ </tr>
+</table>
+<img src="readmefiles/spacer.gif" height=40 alt="">
+<table cellpadding=0 cellspacing=0 border=0 width=100%>
+<!-- MENU BEGIN -->
+ <tr>
+ <td width=10 height=1><img alt="" src="readmefiles/spacer.gif" height=1 width=10></td>
+ <td valign=top width=140>
+  <table cellpadding=0 cellspacing=0 border=1 style="border-collapse: collapse" bordercolor="#111111" width=140 bgcolor=#DDDDDD>
+   <tr>
+   <th bgcolor=#CCCCCC>
+    <table border=1 cellpadding=0 cellspacing=0 width=100%>
+    <tr>
+     <th><font face="verdana, arial, helvetica, sans-serif" size=2>HeadStrong</font></th>
+    </tr>
+    </table>
+   </th>
+   </tr>
+   <tr>
+   <td>
+    <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+    <table cellpadding=0 cellspacing=0 border=0>
+     <tr><td><img alt="" src="readmefiles/spacer.gif" height=1 width=10></td>
+     <td>
+      <font face="tahoma, arial, helvetica, sans-serif" size=1><b>
+       <a href="http:/www.headstrong.de/" class=menu>Overview</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http:/www.headstrong.de/#news" class=menu title="Recent News and Additions">Recent Additions</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http://www.headstrong.de/testimonials.shtml" class=menu title="Awards and Product Listings of HeadStrong Software">Testimonials</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http://www.headstrong.de/newsletter.shtml" class=menu title="Subscribe to our newsletter to stay up-to-date !">Subscribe News</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=8 width=1><br>
+       <a href="http://www.headstrong.de/contact.shtml" class=menu>Contact</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http://www.headstrong.de/cgi-bin/board/YaBB.pl" class=menu><font color=#700000>Message Board</font></a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+      </b></font>
+     </td></tr>
+    </table>
+   </td></tr>
+  </table>
+ <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+ <DIV id="menuc1" style="position:relative;">
+ <table cellpadding=0 cellspacing=0 border=1 style="border-collapse: collapse" bordercolor="#111111" width=140 bgcolor=#CCCCCC>
+  <tr>
+   <td width=140 onclick="pop('datac1')" onmouseover="window.status=webclicker;return true" onmouseout="window.status='';return true">
+    <table border=1 cellpadding=0 cellspacing=0 width=100%>
+    <tr>
+     <th width=125><a href="javascript:pop('datac1')" class=headline onclick="window.status=webclicker;return true"><font face="verdana, arial, helvetica, sans-serif" size=1 color=#000000><b>WebClicker v2.55</b></font></a></th>
+     <th align=right width=15 height=15><a href="javascript:pop('datac1')" class=headline onclick="window.status=webclicker;return true"><img src="readmefiles/pulldown.gif" border=0 width=15 height=15></a></th>
+    </tr>
+    </table>
+   </td>
+  </tr>
+ </table>
+ </DIV>
+ <DIV id="datac1" style="position:absolute;visibility:hidden;height:80px;left:10px;">
+ <table cellpadding=0 cellspacing=0 border=1 width=140 bgcolor=#DDDDDD height=80>
+  <tr>
+  <td width=100%>
+   <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+   <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+     <td><img alt="" src="readmefiles/spacer.gif" height=1 width=10></td>
+    <td>
+     <font face="tahoma, arial, helvetica, sans-serif" size=1><b>
+      <a href="http://www.headstrong.de/software-webclicker.shtml" class=menu title="WebClicker uses public proxies to generate artificial clicks">Information</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/software-webclicker-sh.shtml" class=menu title="WebClicker uses public proxies to generate artificial clicks">Screenshots</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/software-webclicker.shtml#download" class=menu title="WebClicker uses public proxies to generate artificial clicks">Download</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/shop/webclicker.html" class=menu title="WebClicker uses public proxies to generate artificial clicks">Registration</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+     </b></font>
+    </td></tr>
+   </table>
+  </td>
+  </tr>
+ </table>
+ </DIV>
+ <img alt="" src="readmefiles/spacer.gif" height=5 width=1><br>
+ <DIV id="menuc2" style="position:relative;">
+ <table cellpadding=0 cellspacing=0 border=1 style="border-collapse: collapse" bordercolor="#111111" width=140 bgcolor=#CCCCCC>
+  <tr>
+   <th width=140 onclick="pop('datac2')" onmouseover="window.status=icqrinfo;return true" onmouseout="window.status='';return true">
+    <table border=1 cellpadding=0 cellspacing=0 width=100%>
+    <tr>
+     <th width=125><a href="javascript:pop('datac2')" class=headline onclick="window.status=icqrinfo;return true"><font face="verdana, arial, helvetica, sans-serif" size=1 color=#000000><b>ICQr Info v1.5</b></font></a></th>
+     <th align=right width=15 height=15><a href="javascript:pop('datac2')" class=headline onclick="window.status=icrinfo;return true"><img src="readmefiles/pulldown.gif" border=0 width=15 height=15></a></th>
+    </tr>
+    </table>
+   </th>
+  </tr>
+ </table>
+ </DIV>
+ <DIV id="datac2" style="position:absolute;visibility:hidden;height:80px;left:10px;">
+ <table cellpadding=0 cellspacing=0 border=1 width=140 bgcolor=#DDDDDD height=80>
+  <tr><td>
+   <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+   <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+     <td><img alt="" src="readmefiles/spacer.gif" height=1 width=10></td>
+     <td>
+      <font face="tahoma, arial, helvetica, sans-serif" size=1><b>
+       <a href="http://www.headstrong.de/software-icqrinfo.shtml" class=menu title="ICQr Information reads out information stored in ICQ .DAT files, including personal information & passwords">Information</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http://www.headstrong.de/software-icqrinfo-sh.shtml" class=menu title="ICQr Information reads out information stored in ICQ .DAT files, including personal information & passwords">Screenshots</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http://www.headstrong.de/software-icqrinfo.shtml#download" class=menu title="ICQr Information reads out information stored in ICQ .DAT files, including personal information & passwords">Download</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+       <a href="http://www.headstrong.de/software-icqrinfo-faq.shtml" class=menu title="ICQr Information reads out information stored in ICQ .DAT files, including personal information & passwords">F A Q</a><br>
+       <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+      </b></font>
+     </td>
+    </tr>
+   </table>
+  </td></tr>
+ </table>
+ </DIV>
+ <img alt="" src="readmefiles/spacer.gif" height=5 width=1><br>
+ <DIV id="menuc3" style="position:relative;">
+ <table cellpadding=0 cellspacing=0 border=1 style="border-collapse: collapse" bordercolor="#111111" width=140 bgcolor=#CCCCCC>
+  <tr>
+   <th width=140 onclick="pop('datac3')" onmouseover="window.status=id3kill;return true" onmouseout="window.status='';return true">
+    <table border=1 cellpadding=0 cellspacing=0 width=100%>
+    <tr>
+     <th width=125><a href="javascript:pop('datac3')" class=headline onclick="window.status=id3kill;return true"><font face="verdana, arial, helvetica, sans-serif" size=1 color=#000000><b>ID3KILL v1.4</b></font></a></th>
+     <th align=right width=15 height=15><a href="javascript:pop('datac3')" class=headline onclick="window.status=id3kill;return true"><img src="readmefiles/pulldown.gif" border=0 width=15 height=15></a></th>
+    </tr>
+    </table>
+   </th>
+  </tr>
+ </table>
+ </DIV>
+ <DIV id="datac3" style="position:absolute;visibility:hidden;height:69px;left:10px;">
+ <table cellpadding=0 cellspacing=0 border=1 width=140 bgcolor=#DDDDDD height=69>
+  <tr><td>
+   <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+   <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+    <td><img alt="" src="readmefiles/spacer.gif" height=1 width=10></td>
+    <td>
+     <font face="tahoma, arial, helvetica, sans-serif" size=1><b>
+      <a href="http://www.headstrong.de/software-id3kill.shtml" class=menu title="ID3KILL removes id3v1 and id3v2 tags from mp3 files">Information</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/software-id3kill-sh.shtml" class=menu title="ID3KILL removes id3v1 and id3v2 tags from mp3 files">Screenshots</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/software-id3kill.shtml#download" class=menu title="ID3KILL removes id3v1 and id3v2 tags from mp3 files">Download</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+     </b></font>
+    </td></tr>
+   </table>
+  </td></tr>
+ </table>
+ </DIV>
+ <img alt="" src="readmefiles/spacer.gif" height=5 width=1><br>
+ <DIV id="menuc4" style="position:relative;">
+ <table cellpadding=0 cellspacing=0 border=1 style="border-collapse: collapse" bordercolor="#111111" width=140 bgcolor=#CCCCCC>  
+  <tr>
+   <th width=140 onclick="pop('datac4')" onmouseover="window.status=othersoft;return true" onmouseout="window.status='';return true">
+    <table border=1 cellpadding=0 cellspacing=0 width=100%>
+    <tr>
+     <th width=125><a href="javascript:pop('datac4')" class=headline onclick="window.status=othersoft;return true"><font face="verdana, arial, helvetica, sans-serif" size=1 color=#000000><b>Other Software</b></font></a></th>
+     <th align=right width=15 height=15><a href="javascript:pop('datac4')" class=headline onclick="window.status=othersoft;return true"><img src="readmefiles/pulldown.gif" border=0 width=15 height=15></a></th>
+    </tr>
+    </table>
+   </th>
+  </tr>
+ </table>
+ </DIV>
+ <DIV id="datac4" style="position:absolute;visibility:hidden;height:50px;left:10px;">
+ <table cellpadding=0 cellspacing=0 border=1 width=140 bgcolor=#DDDDDD>
+  <tr><td>
+   <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+   <table cellpadding=0 cellspacing=0 border=0>
+    <td><img alt="" src="readmefiles/spacer.gif" height=1 width=10></td>
+    <td>
+     <font face="tahoma, arial, helvetica, sans-serif" size=1><b>
+      <a href="http://www.headstrong.de/software-ofcc.shtml" class=menu title="calculates the optimate combination of files on a medium (CDROM/DISK)">OFCC</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/software-other.shtml" class=menu title="other software written by moritz bartl">More Freeware</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=1 width=1><br>
+      <a href="http://www.headstrong.de/software-marax.shtml" class=menu title="programs written by Marax">Software by Marax</a><br>
+      <img alt="" src="readmefiles/spacer.gif" height=10 width=1><br>
+     </b></font>
+    </td>
+   </table>
+  </td></tr>
+ </table>
+ </DIV>
+ </td>
+ <td width=50><img alt="" src="readmefiles/spacer.gif" width=50 height=1></td>
+<!-- 
+ the following width=100% is for netscape - it does not display the site correct without it :-( 
+-->
+ <td valign=top width=100%>
+<!-- MENU END -->
+
+<script language="JavaScript">
+<!-- 
+ pop('datac3');
+// -->
+</script>
+
+<table width=650 border=0 cellpadding=0 cellspacing=0>
+<td>
+
+<center>
+<font size=4 color=red face="arial, helvetica, sans-serif"><b>ID3KILL for Windows v1.4 Documentation</b><br><font size=2 color=#b00000 face="arial, helvetica, sans-serif">[ released 26.12.2001 ]</font></font>
+<p>
+<table bgcolor=#dfdfdf cellspacing=0 cellpadding=5 border=0 width=50%>
+<tr><td><center><font size=-1 face="tahoma"><b>ID3KILL</b> removes ID3v1 and ID3v2 tags from MP3 files.</font></td>
+</tr></table>
+</center>
+<p>
+
+<font size=2 face="arial, helvetica, sans-serif"><u><b>Overview</b></u>:</font><p>
+<font face="tahoma" size=2>
+This freeware tool removes and lists ID3v1 &amp; ID3v2 tags from MP3 files.<p>ID3 is a general tagging format for audio, which makes it possible to store meta data (album, year, genre, ...) about the song inside the audio file itself.<p>
+<p>This is useful if you encounter incorrect tags in your MP3 files or if you wish to upgrade the tags in your files. ID3KILL has the option of only removing ID3v1 or ID3v2 tags should you wish to preserve one of the two, and can recursively search within subdirectories if you want total annihilation. ID3KILL can even modify files marked 'read-only', provided the storage medium allows it. Simple, easy, removes ID3 tags within a few clicks!
+<p>The latest adds an option to clean up M3U and PLS playlists, removing title and length information (EXTINF) - this saves another few kbytes of hard disk space. For more details see included HTML documentation.<p>
+
+<a href="http://www.headstrong.de/software-id3kill-sh.shtml">View some screenshots!</a><p>
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>Features</b></u>:</font><p>
+<ul>
+ <li>no file limit
+ <li>very fast processing
+ <li>list-only abilities
+ <li>option to preserve ID3v1 or ID3v2 tags
+ <li>compatible with upcoming ID3 tag standards (see <a href="http:/www.id3.org/" target="_blank">id3.org</a>)
+</ul>
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>Options</b></u>:</font><p>
+<ul type="circle">
+ <li><u>Include Subdirectories:</u> self-explaining
+ <p>
+ <li><u>Remove ID3v1 Tags:</u> this setting enables ID3v1 removal from MP3 files
+ <li><u>Remove ID3v2 Tags:</u> enables ID3v2 removal from MP3 files
+ <p>
+ <li><u>Clean M3U Lists:</u> removes any lines starting with # from M3U playlists. This includes the popular EXTINF information, eg. used by WinAMP.
+ <li><u>Clean PLS Lists:</u> removes 'Title' and 'Length' information from PLS playlists.
+ <p>
+ <li><u>Ignore attributes:</u> if enabled, ID3KILL even modified files marked as 'read-only' or 'system'. Attributes will stay intact!
+ <li><u>List only modified files:</u> if unchecked, all files found will become listed instead of only modified files.
+ <p>
+ <li><u>Clean Registry:</u> remove all ID3KILL settings from the Windows registry. You can use this to reset all options or before uninstalling ID3KILL.
+</ul>
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>Command line options</b></u>:</font><p>
+<blockquote>
+ id3kill.exe directory /s /t1 /t2 /i /r /c <i>(see README.TXT for details)</i>
+</blockquote>
+You can also drag and drop a directory on the ID3KILL executable.
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>Shortcut Keys</b></u>:</font><p>
+<ul type="circle">
+ <li><u>ALT-S</u>: include <u>s</u>ubdirectories
+ <li><u>ALT-1</u>: remove ID3v<u>1</u> tags
+ <li><u>ALT-2</u>: remove ID3v<u>2</u> tags
+ <li><u>ALT-M</u>: clean <u>M</u>3U lists
+ <li><u>ALT-P</u>: clean <u>P</u>LS lists
+ <li><u>ALT-I</u>: <u>i</u>gnore file attributes
+ <li><u>ALT-L</u>: <u>l</u>ist only modified files
+ <li><u>ALT-P</u>: <u>p</u>opup message when finished
+ <p>
+ <li><u>ALT-G</u>: start removal (<u>g</u>o)
+ <li><u>ALT-H</u>: open HTML <u>h</u>elp
+ <li><u>ALT-Q</u>: <u>q</u>uit ID3KILL
+ <li><u>ALT-C</u>: <u>c</u>lean windows registry
+</ul>
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>Version History</b></u>:</font><p>
+<blockquote>
+<table width=80% cellspacing=0 cellpadding=0 border=0>
+<td valign=top width=10%><font face="tahoma" size=2><b>v1.4</b></td><td><font face="tahoma" size=2>new option to clean up M3U and PLS playlists<br>popup message when finished (idea by troy)<br>pathname shows up when mouse moves over a file in the list<br>introduced HTML helpfile</td><tr>
+<td valign=top width=10%><font face="tahoma" size=2><b>v1.3</b></td><td><font face="tahoma" size=2>fix serious bug causing damaged MP3 files after removing ID3v2 tags on some occassions<br>added command line options (see README.TXT)<br>fixed some other small bugs</td><tr>
+<td valign=top width=10%><font face="tahoma" size=2><b>v1.2</b></td><td><font face="tahoma" size=2>you can access the following commands through a popup menu:<br> &nbsp; * open/run file (double click or Enter)<br> &nbsp; * copy filename and path into clipboard (CTRL-C)<br> &nbsp; * open path in explorer (CTRL-E)<br>cleared up design and added documentation</td><tr>
+<td valign=top width=10%><font face="tahoma" size=2><b>v1.1</b></td><td><font face="tahoma" size=2>saves settings and screen position<br>resizeable form</td><tr>
+<td valign=top width=10%><font face="tahoma" size=2><b>v1.0</b></td><td><font face="tahoma" size=2>initial release</td><tr>                      
+</table>
+</blockquote>
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>Additional Links</b></u>:</font><p>
+<ul type=disc>
+ <li><a href="http:/www.id3.org/" target=_blank>id3.org</a> - all you need to know about ID3 tags
+ <li><a href="http:/www.winamp.com/" target=_blank>WinAMP</a> - the #1 MP3 player
+ <li><a href="http:/www.cdex.n3.net/" target="_blank">CDex</a> - open source MP3 ripper, uses LAME engine
+</ul>
+
+<p>&nbsp;<br><font size=2 face="arial, helvetica, sans-serif"><u><b>License Agreement</b></u>:</font><p>
+<pre>
+* THIS SOFTWARE IS PROVIDED BY MORITZ BARTL "AS IS" AND ANY EXPRESS 
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGE.
+* PLEASE NOTICE THAT THE USAGE OF THIS PROGRAM MIGHT VIOLATE THE TERMS
+* AND CONDITIONS OF YOUR ADVERTISEMENT PARTNERS,  YOUR INTERNET SERVICE
+* PROVIDER AND/OR ANYBODY YOU ARE IN RELATIONSHIP WITH. 
+* OBEY THE LAW. WE ARE NOT RESPONSIBLE FOR ANYTHING.
+</pre>
+<i>ID3KILL for Windows</i> is distributed as <b>freeware</b>, you are allowed to spread it anywhere you want as long as the binary code is not changed.
+<br>No animals were harmed during the production of this software.
+
+</font>
+</td>
+</table>
+
+</td>
+</table>
+<p>
+<table width=100% border=0 cellpadding=10 cellspacing=0>
+<tr>
+<td align=right><a href="#" onmouseover="window.status='back to top';return true"><img src="readmefiles/arrow-up.gif" alt="back to top" width=14 height=10 border=0></a></td>
+</tr>
+</table>
+</body>
+</html>

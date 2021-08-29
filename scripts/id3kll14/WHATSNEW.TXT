@@ -1,0 +1,16 @@
+v1.4 [26.12.2001] : - new option to clean up M3U and PLS playlists
+                    - popup message when finished (idea by troy)
+                    - pathname shows up when mouse moves over a file in the list
+                    - introduced HTML helpfile
+v1.3 [05.09.2001] : - fix serious bug causing damaged MP3 files after
+                      removing ID3v2 tags on some occassions
+                    - added command line options (see README.TXT)
+                    - fixed some other small bugs
+v1.2 [09.05.2001] : - you can access the following commands through a popup menu:
+                      * open/run file (double click or Enter)
+                      * copy filename and path into clipboard (CTRL-C)
+                      * open path in explorer (CTRL-E)
+                    - cleared up design and added documentation
+v1.1 [12.03.2001] : - saves settings and screen position in Windows Registry
+                    - resizeable form
+v1.0 [12.12.2000] : - initial release

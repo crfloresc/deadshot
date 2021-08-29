@@ -31,15 +31,23 @@ def main():
 
     # Raise an error, bad config file
     if not t:
-        raise Exception('Bad config file, no audio file/duration')
+        raise Exception('Bad config file, no audio file/duration <audioFilePath>')
     if not config.get('audacityDataLabelingFilePath'):
-        raise Exception('Bad config file, no audacity data labeling file')
+        raise Exception('Bad config file, no audacity data labeling file <audacityDataLabelingFilePath>')
     if not config.get('rev'):
-        raise Exception('Bad config file, no revision of data')
+        raise Exception('Bad config file, no revision of data <rev>')
     if not config.get('labels'):
-        raise Exception('Bad config file, no custom labels')
+        raise Exception('Bad config file, no custom labels <labels>')
     if not config.get('offset'):
-        raise Exception('Bad config file, no valid offset')
+        raise Exception('Bad config file, no valid offset <offset>')
+    if not config.get('outputPath'):
+        raise Exception('Bad config file, no output path <outputPath>')
+    if not config.get('labelColors'):
+        raise Exception('Bad config file, no label colors <labelColors>')
+
+    # Validation errors
+    if len(config.get('labels')) != len(config.get('labelColors')):
+        raise Exception('Your labels and label colors is different!')
 
     # Load data from audacity data labeling file
     sampleData, sampleName = loadAudacityDataLabeling(
@@ -55,9 +63,13 @@ def main():
             sampleName,
             sampleData,
             config.get('labels'),
+            config.get('outputPath'),
+            config.get('labelColors'),
+            padding=config.get('padding'),
+            framing=config.get('framing'),
             offset=config.get('offset'),
             t=t)
-        app.graphBrokenBarh()
+        app.graph()
     else:
         raise NotImplementedError('Only accepted two observers')
 

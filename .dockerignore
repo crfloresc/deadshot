@@ -1,0 +1,11 @@
+.venv
+.vscode
+docs
+scripts
+src
+build
+.git
+wsgi.py
+README.md
+LICENSE
+.gitignore

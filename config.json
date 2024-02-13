@@ -1,0 +1,12 @@
+{
+	"test_audioFragmentDuration": 93,
+	"audacityDataLabelingFilePath": "/app/labels/",
+	"rev": "Rev01",
+	"labels": ["R", "BV", "M", "N", "T"],
+	"labelColors": ["black", "green", "purple", "yellow", "blue"],
+	"offset": 0.150,
+	"outputPath": "/app/out/",
+	"framing": 10,
+	"padding": "R",
+	"removeNumberFromLabels": true
+}

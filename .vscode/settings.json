@@ -1,9 +1,9 @@
 {
     "files.exclude": {
-        "**/__pycache__": true,
-        "**/**.egg-info": true,
-        "**/build": true,
-        "**/out": true,
-        "**/sample": true
+        "**/__pycache__": false,
+        "**/**.egg-info": false,
+        "**/build": false,
+        "**/out": false,
+        "**/sample": false
     }
 }

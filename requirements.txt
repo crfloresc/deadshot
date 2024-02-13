@@ -1,1 +1,3 @@
-json
+bokeh==2.3.3
+nltk==3.8.1
+SciPy==1.11.4

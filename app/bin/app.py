@@ -49,6 +49,8 @@ def main():
     if len(config.get('labels')) != len(config.get('labelColors')):
         raise Exception('Your labels and label colors is different!')
 
+    print('Config loaded ->', config.get('audacityDataLabelingFilePath'), config.get('rev'), t, config.get('labels'), config.get('removeNumberFromLabels'))
+
     # Load data from audacity data labeling file
     sampleData, sampleName = loadAudacityDataLabeling(
         path=config.get('audacityDataLabelingFilePath'),

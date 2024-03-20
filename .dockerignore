@@ -9,3 +9,5 @@ wsgi.py
 README.md
 LICENSE
 .gitignore
+dist
+.hydra

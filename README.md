@@ -5,7 +5,7 @@
 - docker: Docker version 24.0.7, build afdd53b
 - python: 3.10.13
 
-## Labels format
+## Observer's segmentation format
 
 Make sure your label filenames follow this format: `O[N].RevN.txt`. Here, **N** is a number like *2*, and **RevN** is a revision like *Rev01*. For example, `O2.Rev01.txt`.
 

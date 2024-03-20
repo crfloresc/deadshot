@@ -1,9 +1,11 @@
 from bokeh.plotting import figure, output_file, save
-from bokeh.models import BoxAnnotation, ColumnDataSource, Label, LabelSet, Range1d, HoverTool
+from bokeh.models import BoxAnnotation, ColumnDataSource, Label, Range1d, HoverTool
 from nltk import agreement
 from time import process_time
 from timeit import timeit
 from decimal import getcontext, ROUND_HALF_UP, Decimal
+
+
 getcontext().prec = 5
 getcontext().rounding = ROUND_HALF_UP
 

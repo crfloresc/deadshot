@@ -1,7 +1,10 @@
-from app.lib import Deadshot, loadAudacityDataLabeling
+from os import listdir
+from app.lib import Deadshot
 from argparse import ArgumentParser
 from json import load as jsonload
+from app.lib.audacity import load_labels
 from scipy.io import wavfile
+from os.path import abspath
 
 def getArgs():
     parser = ArgumentParser(prog='deadshot', description='Arguments being passed to the program')
@@ -51,29 +54,34 @@ def main():
 
     print('Config loaded ->', config.get('audacityDataLabelingFilePath'), config.get('rev'), t, config.get('labels'), config.get('removeNumberFromLabels'))
 
-    # Load data from audacity data labeling file
-    sampleData, sampleName = loadAudacityDataLabeling(
-        path=config.get('audacityDataLabelingFilePath'),
-        rev=config.get('rev'),
-        audioDuration=t,
-        validLabels=config.get('labels'),
-        removeNumberFromLabels=config.get('removeNumberFromLabels'))
+    label_path = config.get('audacityDataLabelingFilePath')
+    label_ext = 'txt'
+    label_rev = config.get('rev')
+    file_paths = sorted([abspath(f'{label_path}/{x}') for x in listdir(label_path) if x.split('.')[-1] == label_ext and label_rev in x.split('.')])
 
-    # Check if there are two observers in data
-    if len(sampleData) == 2:
-        app = Deadshot(
-            sampleName,
-            sampleData,
-            config.get('labels'),
-            config.get('outputPath'),
-            config.get('labelColors'),
-            padding=config.get('padding'),
-            framing=config.get('framing'),
-            offset=config.get('offset'),
-            t=t)
-        app.graph()
-    else:
+    if len(file_paths) == 0:
+        raise Exception('No files found')
+    if len(file_paths) != 2:
         raise NotImplementedError('Only accepted two observers')
+
+    # Load data from audacity data labeling file
+    sampleData, sampleName = load_labels(
+        file_paths,
+        labels=config.get('labels'),
+        __path=label_path,
+        __rev=label_rev)
+
+    app = Deadshot(
+        sampleName,
+        sampleData,
+        config.get('labels'),
+        config.get('outputPath'),
+        config.get('labelColors'),
+        padding=config.get('padding'),
+        framing=config.get('framing'),
+        offset=config.get('offset'),
+        t=t)
+    app.graph()
 
 if __name__ == '__main__':
     main()

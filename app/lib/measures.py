@@ -36,7 +36,9 @@ class Deadshot(object):
         # For agreement
         self.ratingtask = None
 
-        self.__fill_dicts(sample_data)
+        self.__fill_label_maps()
+        self.__fill_ioa_maps()
+        self.__fill_observer_maps(sample_data)
         self.__process(sample_data)
 
     def __fill_label_maps(self):
@@ -47,23 +49,18 @@ class Deadshot(object):
             self.railmap[label] = eventRailPos
             eventRailPos += incrementInEventRail
 
-    def __fill_ioa_maps(self, observer_rail, keys=['agreement', 'noAgreement'],
+    def __fill_ioa_maps(self, observer_rail=0.55, keys=['agreement', 'noAgreement'],
                         colors=['green', 'red'], rail_pos=[0.14, 0.15]):
         for key, color, rail in zip(keys, colors, rail_pos):
             self.ioacolormap[key] = color
             self.ioarailmap[key] = observer_rail - rail
 
-    def __fill_observer_maps(self, sample_data, observer_rail):
+    def __fill_observer_maps(self, sample_data, observer_rail=0.55):
         for k in sample_data.keys():
             observer_rail = observer_rail - 0.05
             self.data[k] = []
             self.agreements[k] = []
             self.observermap[k] = observer_rail
-
-    def __fill_dicts(self, sample_data, observer_rail=0.55):
-        self.__fill_label_maps()
-        self.__fill_ioa_maps(observer_rail)
-        self.__fill_observer_maps(sample_data, observer_rail)
 
     def __check_integrity(self):
         o1, o2 = (len(v) for v in self.agreements.values())
@@ -72,13 +69,9 @@ class Deadshot(object):
 
     def __compare(self, v1, v2, observer1, observer2):
         cv1, cv2 = v1.copy(), v2.copy()
-        #self.data[observer1] = [tuple(_) for _ in cv1]
-        #self.agreements[observer2] = [tuple(_) for e in cv1 for _ in cv2 if (abs(e[0] - _[0]) <= self.offset) and (abs(e[1] - _[1]) <= self.offset) and (e[2] == _[2])]
-        #'''
         for event1 in cv1:
             start1, end1, label1 = event1
             self.data[observer1].append(event1)
-            #res = res + [tuple(_) for _ in cv2 if (abs(start1 - _[0]) <= self.offset) and (abs(end1 - _[1]) <= self.offset) and (label1 == _[2])]
             for j, event2 in enumerate(cv2):
                 start2, end2, label2 = event2
                 diffStart, diffEnd = abs(start1 - start2), abs(end1 - end2)
@@ -86,8 +79,6 @@ class Deadshot(object):
                     self.agreements[observer2].append(cv2[j])
                     cv2.remove(event2)
                     break
-        #self.agreements[observer2] = res
-        #'''
 
     def __subtractRanges(self, A, B):
         ''' SUBTRACTS A FROM B
@@ -128,23 +119,12 @@ class Deadshot(object):
                 A, B = v[i], v[i + 1]
                 ranges = self.__subtractRanges(A, B)
                 if ranges[-1]:
-                    #v.remove(A)
-                    #v.remove(B)
-                    #v = list(set(v) - set([A, B]))
-                    #v = v[:i] + v[i + 2:]
                     del v[i]
                     del v[i + 1]
-                    #v = [item for item in v if item not in [A, B] ]
-                    #v = list(filter(lambda item: item not in [A, B], v))
                     i = -1
                     vals = [e for _ in ranges for e in _ if _]
                     v = vals + v
                     vl = len(v)
-                    #for e1 in ranges:
-                    #    if e1:
-                    #        for e2 in e1:
-                    #            v.insert(0, e2) #if e2:
-                    #v = sorted(v)
             i += 1
         return v
 
@@ -254,14 +234,6 @@ class Deadshot(object):
         else:
             result['agreement'].append((z1, z2))
             result['noAgreement'].append((z2, self.t))
-
-        # draw temp agreement bars
-        '''railmap = {'ZZ': 0.21, 'XX': 0.19}
-        for k, v in self.agreements.items():
-            for e in v:
-                start, end, label = e
-                diff = abs(end - start)
-                p.line([start, start + diff], [railmap[k], railmap[k]], line_color='green', line_alpha=0.8, line_width=6)'''
 
         # draw agreement bar and annotation
         print('[GRAPH] drawing agreement bars ...')

@@ -39,7 +39,8 @@ class Deadshot(object):
         self.__fill_label_maps()
         self.__fill_ioa_maps()
         self.__fill_observer_maps(sample_data)
-        self.__process(sample_data)
+        items1, items2 = self.__process_items(sample_data)
+        self.__process_agreement(items1, items2)
 
     def __fill_label_maps(self):
         incrementInEventRail = 0.0013
@@ -64,7 +65,6 @@ class Deadshot(object):
 
     def __check_integrity(self):
         o1, o2 = (len(v) for v in self.agreements.values())
-        if self.debug: print(f'[DEBUG] number of events in observer1: {o1}, observer2: {o2}')
         return True if o1 == o2 else False
 
     def __compare(self, v1, v2, observer1, observer2):
@@ -80,7 +80,7 @@ class Deadshot(object):
                     cv2.remove(event2)
                     break
 
-    def __subtractRanges(self, A, B):
+    def __items_symmetric_difference(self, A, B):
         ''' SUBTRACTS A FROM B
             e.g, A =    ------
                  B =  -----------
@@ -117,7 +117,7 @@ class Deadshot(object):
         while i < vl:
             if i + 1 < vl:
                 A, B = v[i], v[i + 1]
-                ranges = self.__subtractRanges(A, B)
+                ranges = self.__items_symmetric_difference(A, B)
                 if ranges[-1]:
                     del v[i]
                     del v[i + 1]
@@ -128,7 +128,7 @@ class Deadshot(object):
             i += 1
         return v
 
-    def __upsample(self, v, L, pad, d):
+    def __upsample_items(self, v, L, pad, d):
         '''__upsample(self, v) -> list
         e.g. #pv = [(0, 0.144560, 'RVF'), (0.201564, 0.856712, 'N')] # procesed vector
 
@@ -146,39 +146,32 @@ class Deadshot(object):
                 track[j] = label
         return track
 
-    def __process(self, sample_data):
-        t = process_time()
+    def __process_items(self, sample_data):
         data1, data2 = ((k, v) for k, v in sample_data.items())
-        o1, v1 = data1
-        o2, v2 = data2
-        if not v1 or not v2:
-            raise Exception('v1 or v2 not presented')
-        self.__compare(v1, v2, o1, o2)
-        self.__compare(v2, v1, o2, o1)
+        coder1, items1 = data1
+        coder2, items2 = data2
+        if not items1 or not items2:
+            raise Exception('items1 or items2 not presented')
+        self.__compare(items1, items2, coder1, coder2)
+        self.__compare(items2, items1, coder2, coder1)
 
         if not self.__check_integrity():
-            if self.debug: print(self.agreements)
             raise Exception('There are difference between two observers')
-        elapsed_time = process_time() - t
-        print(f'[BENCHMARK] -- {elapsed_time * 1000:.4f}ms') # if self.debug:
-        ov1 = self.__omh(v1)
-        if self.debug: print(f'[BENCHMARK] from omh v1 -- {timeit(lambda: self.__omh(v1), number=1000) * 1000:.4f}ms')
-        ov2 = self.__omh(v2)
-        if self.debug: print(f'[BENCHMARK] from omh v2 -- {timeit(lambda: self.__omh(v2), number=1000) * 1000:.4f}ms')
-        ref = self.__upsample(ov1, L=self.t, pad=self.padding, d=self.framing)
-        if self.debug: print(f'[BENCHMARK] from f(ov1) -- {timeit(lambda: self.__upsample(ov1, L=self.t, pad=self.padding, d=self.framing), number=1) * 1000:.4f}ms')
-        hyp = self.__upsample(ov2, L=self.t, pad=self.padding, d=self.framing)
-        if self.debug: print(f'[BENCHMARK] from f(ov2) -- {timeit(lambda: self.__upsample(ov2, L=self.t, pad=self.padding, d=self.framing), number=1) * 1000:.4f}ms')
-        if self.debug: print(f'[DEBUG] len of {len(ref)}, {len(hyp)}')
+        return (items1, items2)
 
-        self.__ratingtask(ref, hyp)
-        print(f'[INFO] kappa: {self.ratingtask.kappa() * 100:.2f}%')
+    def __process_agreement(self, items1, items2):
+        itemsTimeContinuous1 = self.__omh(items1)
+        itemsTimeContinuous2 = self.__omh(items2)
+        itemsUpsampled1 = self.__upsample_items(itemsTimeContinuous1, L=self.t, pad=self.padding, d=self.framing)
+        itemsUpsampled2 = self.__upsample_items(itemsTimeContinuous2, L=self.t, pad=self.padding, d=self.framing)
+        self.__metric_interannotator_agreement_coefficients(itemsUpsampled1, itemsUpsampled2)
 
-    def __ratingtask(self, v1, v2):
+    def __metric_interannotator_agreement_coefficients(self, v1, v2):
         formatted = [[1, i, v] for i, v in enumerate(v1)] + [[2, i, v] for i, v in enumerate(v2)]
         self.ratingtask = agreement.AnnotationTask(data=formatted)
+        print(f'[INFO] Cohen\'s Kappa: {self.ratingtask.kappa() * 100:.2f}%')
 
-    def kappa(self):
+    def cohen_kappa(self):
         if not self.ratingtask:
             return None
         return f'Cohen\'s Kappa: {round(self.ratingtask.kappa() * 100, 4)}%'
@@ -247,7 +240,7 @@ class Deadshot(object):
         # add ioa percent
         print('[GRAPH] drawing ioa percent ...')
         ioaPercent = Label(x=70, y=500, x_units='screen', y_units='screen',
-                 text=self.kappa(), render_mode='css',
+                 text=self.cohen_kappa(), render_mode='css',
                  border_line_color='black', border_line_alpha=0.9,
                  background_fill_color='white', background_fill_alpha=1.0)
         p.add_layout(ioaPercent)

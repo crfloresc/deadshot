@@ -110,7 +110,7 @@ class Deadshot(object):
                 M.append((As, Ae, l))
         return tuple(Br), tuple(Ar), tuple(M)
 
-    def __omh(self, vec):
+    def __create_array_based_time_continuous(self, vec):
         v = vec.copy()
         i = 0
         vl = len(v)
@@ -160,8 +160,8 @@ class Deadshot(object):
         return (items1, items2)
 
     def __process_agreement(self, items1, items2):
-        itemsTimeContinuous1 = self.__omh(items1)
-        itemsTimeContinuous2 = self.__omh(items2)
+        itemsTimeContinuous1 = self.__create_array_based_time_continuous(items1)
+        itemsTimeContinuous2 = self.__create_array_based_time_continuous(items2)
         itemsUpsampled1 = self.__upsample_items(itemsTimeContinuous1, L=self.t, pad=self.padding, d=self.framing)
         itemsUpsampled2 = self.__upsample_items(itemsTimeContinuous2, L=self.t, pad=self.padding, d=self.framing)
         self.__metric_interannotator_agreement_coefficients(itemsUpsampled1, itemsUpsampled2)

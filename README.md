@@ -1,4 +1,4 @@
-# hel
+# ViTAA
 
 ## Versions
 
@@ -30,9 +30,9 @@ Note: Adjust these settings according to your requirements to customize the proc
 
 To build the image:
 ```docker
-docker build -t hel .
+docker build -t vitaa .
 ```
 To run the sidecar container:
 ```
-docker run --name hel -v ./config.json:/app/config.json -v ./out:/app/out --rm hel
+docker run --name vitaa -v ./config.json:/app/config.json -v ./out:/app/out --rm vitaa
 ```

@@ -1,4 +1,4 @@
-# ViTAA
+# ViTAA &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/carlos.flores/vitaa/blob/main/LICENSE)
 
 ## Versions
 
@@ -36,3 +36,7 @@ To run the sidecar container:
 ```
 docker run --name vitaa -v ./config.json:/app/config.json -v ./out:/app/out --rm vitaa
 ```
+
+### License
+
+ViTAA is [MIT licensed](./LICENSE).

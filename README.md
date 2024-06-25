@@ -1,4 +1,4 @@
-# ViTAA &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/carlos.flores/vitaa/blob/main/LICENSE)
+# ViTAA &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/crfloresc/hel/blob/main/LICENSE)
 
 ## Versions
 

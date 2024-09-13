@@ -1,17 +1,20 @@
-import setuptools
+from setuptools import setup, find_packages
 
-setuptools.setup(
+with open('requirements.txt') as f:
+    install_requires = f.read().splitlines()
+
+setup(
     name='deadshot',
     version='1.0.0',
     author='Carlos Flores',
-    author_email='',
-    description='',
-    packages=setuptools.find_packages(),
+    author_email='carlos.flores@potros.itson.edu.mx',
+    description='NA',
+    packages=find_packages(),
     python_requires='>=3.6',
-    install_requires=[],
+    install_requires=install_requires,
     entry_points={
-            'console_scripts': [
-                'deadshot = app.bin.app:main'
-            ],
-        },
+        'console_scripts': [
+            'deadshot = app.bin.app:main'
+        ],
+    },
 )

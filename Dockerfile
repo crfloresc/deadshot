@@ -12,8 +12,8 @@ COPY ./out/ /app/out/
 COPY ./setup.py /app/
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 
-RUN python setup.py build
-RUN python setup.py develop
+RUN python setup.py build \
+    && python setup.py develop
 
 ENTRYPOINT [ "deadshot" ]
 CMD [ "-c", "config.json" ]

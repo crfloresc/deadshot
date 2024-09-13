@@ -5,6 +5,18 @@
 - docker: Docker version 24.0.7, build afdd53b
 - python: 3.10.13
 
+## Development
+
+```sh
+sudo apt install python3.10-venv -y
+python3 -m venv ./venv
+source ./venv/bin/activate
+pip install --no-cache-dir -r requirements.txt
+python3 setup.py build
+python3 setup.py develop
+deadshot -c config.json
+```
+
 ## Observer's segmentation format
 
 Make sure your label filenames follow this format: `O[N].RevN.txt`. Here, **N** is a number like *2*, and **RevN** is a revision like *Rev01*. For example, `O2.Rev01.txt`.

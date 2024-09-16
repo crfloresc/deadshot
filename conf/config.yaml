@@ -1,0 +1,62 @@
+general:
+  frame: 1000
+  float_tol: 0.00000024
+  id_separator: '|'
+  max_time_diff: 0.5
+  # it will activate debug log messages.
+  debug: false
+
+audacity:
+  end_line: '\r\n'
+  line_separator: '\t'
+  # '.' and ',' observed when exported
+  # sample files from audacity.
+  num_separator: ','
+  # it will remove all non alphabetic characters
+  # from label in sample files, always remove spaces.
+  only_alphabetic_label: true
+  # omit all negative values on the sample files.
+  non_negative: true
+  # if true then will not throw exceptions when
+  # parsing the sample files, if there are.
+  omit_exceptions: true
+
+sample:
+  labels:
+    - R
+    - BV
+    - M
+    - C
+    - T
+  # if not specified, then omitted
+  rev: Rev01
+  path: ./labels/
+  save_path: ./out/
+  ext: txt
+  # default label value if some time section
+  # was not labeled.
+  # if the default exists in sample.labels
+  # can increase the kappa percentage.
+  default_label: ZVOID
+
+chart:
+  # from 1 to 0, 1 is the highest position.
+  observer_pos: 0.55
+  # from 1 to 0, 1 is the highest position.
+  agreement_pos: 0.4
+  # screen position 70x 500y default value.
+  ioa_pos: [70, 500]
+  always_start_on_zero: true
+
+color:
+  # must match with sample labels lenght, it will
+  # take the order of labels to assign the color
+  # if not then will generate random colors.
+  labeling:
+    - black
+    - lime
+    - purple
+    - yellow
+    - blue
+  agreement: green
+  disagreement: red

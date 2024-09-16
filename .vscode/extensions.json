@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "visualstudioexptteam.vscodeintellicode",
+        "kevinrose.vsc-python-indent",
+        "njpwerner.autodocstring",
+        "donjayamanne.python-environment-manager",
+        "ms-python.black-formatter"
+    ]
+}
